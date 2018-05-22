@@ -1,0 +1,15 @@
+{
+    "git.ignoreLimitWarning": true,
+    "eslint.enable": true,
+    "eslint.options": {
+        "configFile": ".eslintrc.js"
+    },
+    "files.autoSave": "off",
+    "editor.formatOnSave": false,
+    "tslint.autoFixOnSave": false,
+    "editor.tabSize": 2,
+    "eslint.autoFixOnSave": true,
+    "triggerTaskOnSave.restart": false,
+    "triggerTaskOnSave.on": true,
+    "files.eol": "\n",
+}

@@ -1,0 +1,25 @@
+{
+    "name": "templateapi",
+    "version": "1.0.0",
+    "description": "",
+    "main": "app.js",
+    "scripts": {
+        "start": "node index.js",
+        "dev": "nodemon index.js",
+        "test": "eslint ./",
+        "apidoc": "apidoc -i ./ -o ./doc -e ./node_modules ./doc"
+    },
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "apidoc": "^0.17.6",
+        "eslint": "^4.19.1",
+        "eslint-config-airbnb-base": "^12.1.0",
+        "eslint-plugin-import": "^2.12.0",
+        "nodemon": "^1.17.4"
+    },
+    "dependencies": {
+        "body-parser": "^1.18.3",
+        "express": "^4.16.3"
+    }
+}
