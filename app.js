@@ -1,8 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 
-const gate = require('./route/gate.route');
-
 const app = express();
 
 console.log('Launching...');
@@ -11,8 +9,8 @@ console.log('Launching...');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-// définit la route /api comme racine de nos requêtes
-app.use('/api', gate);
+// définit la route '' comme racine de nos requêtes
+app.use('', require('./route/gate.route'));
 
 const router = express.Router();
 

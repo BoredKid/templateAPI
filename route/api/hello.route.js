@@ -1,5 +1,7 @@
 const express = require('express');
 
+// on va chercher le controller qui contient toutes les fonctions utiles
+// pour les routes hello
 const HelloController = require('../../controllers/hello.controller.js');
 
 const router = express.Router();
@@ -27,7 +29,7 @@ router.get('/', HelloController.helloWorld);
 /**
  * @api {get} /hello/:name Say hello to someone
  * @apiName GetHelloWithName
- * @apiGroup Bonjour
+ * @apiGroup BonjourAvecNom
  * @apiDescription Cette route dit bonjour à une personne bien précise
  *
  * @apiParam {String} name Prénom ou Pseudo de la personne à qui il faut dire bonjour
@@ -52,7 +54,7 @@ router.get('/:name', HelloController.helloName);
 /**
  * @api {post} /hello Say hello to someone also but with a post
  * @apiName PostHelloWithName
- * @apiGroup Bonjour
+ * @apiGroup BonjourAvecNom
  * @apiDescription Cette route dit bonjour à une personne bien précise en utilisant un post
  *
  * @apiParam {String} name Prénom ou Pseudo de la personne à qui il faut dire bonjour

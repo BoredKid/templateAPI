@@ -1,48 +1,10 @@
 define({ "api": [
   {
     "type": "get",
-    "url": "/hello",
-    "title": "Say hello",
-    "name": "GetHello",
-    "group": "Bonjour",
-    "description": "<p>Cette route dit bonjour.</p>",
-    "success": {
-      "fields": {
-        "Success 200": [
-          {
-            "group": "Success 200",
-            "type": "String",
-            "optional": false,
-            "field": "message",
-            "description": "<p>&quot;Hello World&quot;</p>"
-          },
-          {
-            "group": "Success 200",
-            "type": "String",
-            "optional": false,
-            "field": "success",
-            "description": "<p>true</p>"
-          }
-        ]
-      },
-      "examples": [
-        {
-          "title": "Success-Response:",
-          "content": "{\n  \"success\": true,\n  \"message\": \"Hello World!\"\n}",
-          "type": "json"
-        }
-      ]
-    },
-    "version": "0.0.0",
-    "filename": "./route/api/hello.route.js",
-    "groupTitle": "Bonjour"
-  },
-  {
-    "type": "get",
     "url": "/hello/:name",
     "title": "Say hello to someone",
     "name": "GetHelloWithName",
-    "group": "Bonjour",
+    "group": "BonjourAvecNom",
     "description": "<p>Cette route dit bonjour à une personne bien précise</p>",
     "parameter": {
       "fields": {
@@ -93,14 +55,19 @@ define({ "api": [
     },
     "version": "0.0.0",
     "filename": "./route/api/hello.route.js",
-    "groupTitle": "Bonjour"
+    "groupTitle": "BonjourAvecNom",
+    "sampleRequest": [
+      {
+        "url": "localhost:8080/hello/:name"
+      }
+    ]
   },
   {
     "type": "post",
     "url": "/hello",
     "title": "Say hello to someone also but with a post",
     "name": "PostHelloWithName",
-    "group": "Bonjour",
+    "group": "BonjourAvecNom",
     "description": "<p>Cette route dit bonjour à une personne bien précise en utilisant un post</p>",
     "parameter": {
       "fields": {
@@ -151,7 +118,55 @@ define({ "api": [
     },
     "version": "0.0.0",
     "filename": "./route/api/hello.route.js",
-    "groupTitle": "Bonjour"
+    "groupTitle": "BonjourAvecNom",
+    "sampleRequest": [
+      {
+        "url": "localhost:8080/hello"
+      }
+    ]
+  },
+  {
+    "type": "get",
+    "url": "/hello",
+    "title": "Say hello",
+    "name": "GetHello",
+    "group": "Bonjour",
+    "description": "<p>Cette route dit bonjour.</p>",
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "type": "String",
+            "optional": false,
+            "field": "message",
+            "description": "<p>&quot;Hello World&quot;</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "String",
+            "optional": false,
+            "field": "success",
+            "description": "<p>true</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Success-Response:",
+          "content": "{\n  \"success\": true,\n  \"message\": \"Hello World!\"\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "version": "0.0.0",
+    "filename": "./route/api/hello.route.js",
+    "groupTitle": "Bonjour",
+    "sampleRequest": [
+      {
+        "url": "localhost:8080/hello"
+      }
+    ]
   },
   {
     "success": {

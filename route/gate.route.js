@@ -1,9 +1,9 @@
 const express = require('express');
 
-const helloRoute = require('./api/hello.route.js');
-
 const router = express.Router();
 
-router.use('/hello', helloRoute);
+// notre application ne propose que la route api mais on peut envisager
+// d'autres route comme auth
+router.use('/api', require('./api'));
 
 module.exports = router;
