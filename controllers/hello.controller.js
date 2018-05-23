@@ -1,7 +1,7 @@
 exports.helloWorld = (req, res) => {
   res.status(200).json({
-    success: true,
-    message: 'Hello World!',
+    status: 200,
+    result: 'Hello World!',
   });
 };
 
@@ -9,13 +9,13 @@ exports.helloName = (req, res) => {
   const name = req.params.name || req.body.name;
   if (!name) {
     res.status(400).json({
-      success: false,
+      status: 400,
       message: 'Name missing',
     });
   }
 
   res.status(200).json({
-    success: true,
-    message: `Hello ${name}!`,
+    status: 200,
+    result: `Hello ${name}!`,
   });
 };

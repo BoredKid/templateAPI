@@ -18,7 +18,6 @@ const router = express.Router();
  *
  * @apiSuccessExample Success-Response:
  *  {
- *    "success": true,
  *    "message": "Hello World!"
  *  }
  *
@@ -43,7 +42,6 @@ router.get('/', HelloController.helloWorld);
  *
  * @apiSuccessExample Success-Response:
  *  {
- *    "success": true,
  *    "message": "Hello Jackie!"
  *  }
  *
@@ -69,7 +67,6 @@ router.get('/:name', HelloController.helloName);
  *
  * @apiSuccessExample Success-Response:
  *  {
- *    "success": true,
  *    "message": "Hello Jackie!"
  *  }
  *

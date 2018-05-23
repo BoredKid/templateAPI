@@ -10,7 +10,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
 // définit la route '' comme racine de nos requêtes
-app.use('', require('./route/gate.route'));
+app.use('', require('./routes/gate.route'));
 
 const router = express.Router();
 

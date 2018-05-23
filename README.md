@@ -204,7 +204,7 @@ _\- Clary, 22 Mai 2018_
 ## <a id="organisation"></a> VI - Organisation: Comment structurer mon projet ?
 Le contenu de ce paragraphe est une proposition d'organisation et de bonnes pratiques que nous avons décider d'adopter à la CoZone pour les APIs. Il en existe pleins d'autres valables mais on a choisi celle-ci encore une fois sans aucune raison valable en dehors du fait qu'elle permet d'avoir un projet propre et compréhensible. Du coup, nous te conseillons fortement (sans vouloir te commander) d'utiliser les mêmes conventions. Comme ca, il sera plus facile d'analyser le code pour un autre Cozonnard. Après si veux semer la Discord(!unjoke), personne ne peut t'en empêcher :/.
 
-### Le fichier principal: app.js
+### Le fichier principal : `app.js`
 Ce fichier est la base de l'application, le fichier principal qui contient le paramétrage du serveur et son lancement. 
 
 Les logs sont importants, ils permettent de savoir quel est l'état du serveur et de connaître le port utilisé.
@@ -224,7 +224,7 @@ const server = app.listen(process.env.PORT || port, () => {
 
 On précise ainsi qu'on va utiliser le port définit dans les variables d'environnement (obligatoire pour beaucoup de dispositif de mise en ligne eg:Heroku) et que si il n'y a pas de variable d'environnement on utilisera le port définit dans la variable `port` (8080 dans l'exemple ci-dessus).
 
-### Routes: Mieux qu'un GPS
+### Routes : Mieux qu'un GPS
 Les routes de notre API seront définies et documentées dans le dossier `route` dans lequel on trouvera un fichier appelé `gate.route.js` qui va accueillir toutes les requêtes comme indiqué dans le fichier `app.js` avec la ligne
 ```js
 app.use('', require('./route/gate.route'));
@@ -236,10 +236,82 @@ router.use('/api', require('./api'));
 ```
 Et pour chacun de ces `index.js`, on va appeler les différentes routes associés à ce service de notre applications. Par exemple, pour une api d'application de messagerie, l'index pourrait contenir:
 ```js
+router.use('/hello', require('./hello.route.js')); // une application de messagerie avec un bonus :)
 router.use('/user', require('./user.route.js'));
 router.use('/message', require('./message.route.js'));
 router.use('/channel', require('./channel.route.js'));
 ```
+Evidemment, chacun des fichiers `require` ci-dessus est présent dans le dossier contenant l'index. On arrive au plus bas niveau de nos route. La dernière étape dans notre traversée de l'application.  
+Voici ce que peut contenir le fichier `hello.route.js`:
+```js
+const express = require('express');
+
+const HelloController = require('../../controllers/hello.controller.js');
+
+const router = express.Router();
+
+router.get('/', HelloController.helloWorld);
+router.get('/:name', HelloController.helloName);
+router.post('/', HelloController.helloName);
+
+module.exports = router;
+```
+_Je n'ai pas mis les commentaires Apidoc ici mais avec c'est mieux hein ;)_
+
+On peut voir qu'on définit deux routes GET et une route POST. Pour chaque route, on utilise une fonction d'un certain `HelloController` qu'on va aller voir par la suite. Ces fonctions définissent le comportement à avoir pour chaque route.
+
+Bonne pratique: **un fichier route par controller** (ce qui correspondra en général pour une API avec mongo à un modèle mongoose mais après là ca dépend que de toi). Cela permet de savoir facilement où seront les fonctions utilisés pour un petit ensemble de route et ca évite les surplus d'imports par fichier.
+
+Si on résume à ce stade, on sait que la route "`<url>:8080/api/hello/Jackie`" va appeler la fonction `HelloController.helloName`.
+
+Illustration ou TLDR:  
+*Appelle le service http* (app.js)
+- Bonjour, j'ai une demande pour 'localhost:8080/api/hello/:name'
+- 'localhost:8080' laissez moi regarder deux seconde. Ok c'est bon. Je prends votre dossier, j'enlève 'localhost:8080' et vous pouvez vous diriger vers le ministère des requête local au port 8080
+  
+*Se rend à l'accueil du ministère des requêtes* (gate.route.js)
+- Bonjour, j'ai une requête pour '/api/hello/:name'
+- '/api'. Euh ce département se trouve dans l'aile droite du ministère. Vous pouvez vous y rendre avec votre dossier et '/hello/:name'.
+
+*Devant le secrétaire du département api*
+- Bonjour j'ai une requête pour '/hello/:name'
+- Je vais vous rediriger vers le bureau "/hello". Garder juste le ":name"
+
+*Au bureau Hello*
+- Bonjour, j'ai un "/:name" avec un GET
+- Ok très bien nous allons donc engager la procédure "HelloController.helloName"
+
+Aux sceptiques qui râleront en disant: "Tout ce bazar pour finalement appeler une fonction à l'autre bout du monde", je réponds "Certes ca fait pas mal de chose mais je peux vous assurer que le gain en clarté et en lisibilité est immense".
+
+### Le contrôleur: le cerveau
+Jusqu'à maintenant, on a rien fait de complexe à part des redirection (comme illustré ci-dessus). Une fois que la requête arrivée à destination avec on va solliciter le `controller` associé pour effectuer le traitement voulu et renvoyer la réponse associée.
+
+La route `hello` fait référence au controller `hello.controller.js` qui se trouve dans le dossier `controllers` comme tous les controllers (you don't say ... Captain Obvious is here).
+
+Chaque fonction de se controller va être exporter. Par exemple, la fonction qui nous intéresse est définie et exportée ainsi:
+
+```js
+exports.helloName = (req, res) => {
+  const name = req.params.name || req.body.name;
+  if (!name) {
+    res.status(400).json({
+      message: 'Name missing',
+    });
+  }
+
+  res.status(200).json({
+    message: `Hello ${name}!`,
+  });
+};
+```
+
+On peut voir que notre paramètre passé en `:name` est récupéré par `req.params.name`.
+
+_`req.body.name` est utilisé pour l'équivalent de cette requête mais en POST ainsi cette fonction peut être appelée pour les deux routes_
+
+On associe des status à la réponse en fonction du succès ou d'éventuels problèmes rencontrés. 200 ou 201 correspondent en général à un succès.
+
+Voilà, voilà c'est tout pour l'organisation et les bonnes pratiques de ce type de projet.
 
 # <a id="plusloin"></a> Et pour aller plus loin...
 
@@ -341,7 +413,6 @@ Voici deux exemples simples tirés directement du template:
  *
  * @apiSuccessExample Success-Response:
  *  {
- *    "success": true,
  *    "message": "Hello World!"
  *  }
  *
@@ -366,7 +437,6 @@ router.get('/', HelloController.helloWorld);
  *
  * @apiSuccessExample Success-Response:
  *  {
- *    "success": true,
  *    "message": "Hello Jackie!"
  *  }
  *
@@ -635,14 +705,14 @@ exports.getTasks = async (req, res) => {
     // on renvoie une réponse avec un statut 200, pour prévenir que tout est ok
     // avec les informations demandées, ici la liste de toutes les tâches
     return res.status(200).json({
-      success: true,
-      data: tasks, // on pourrait utiliser .map(() si on devait formatter les infos envoyées, comme enlever les données sensibles (password pour un utilisateur), etc.
+      status: 200,
+      result: tasks, // on pourrait utiliser .map(() si on devait formatter les infos envoyées, comme enlever les données sensibles (password pour un utilisateur), etc.
     });
   } catch (e) {
     // on renvoie une réponse avec un statut 500, pour prévenir que l'erreur est interne au serveur
     // on rajoute également le message pour pouvoir tracer et corriger l'erreur par la suite
     return res.status(500).json({
-      success: false,
+      status: 500,
       message: e.message,
     });
   }
@@ -653,16 +723,23 @@ exports.getTaskById = async (req, res) => {
     // on renvoie une réponse avec erreur 400, pour prévenir que l'erreur vient de la requête
     // ici, il manque l'id permettant de récupérer la tâche
     return res.status(400).json({
-      success: false,
+      status: 400,
       message: 'Id missing',
     });
   }
+  
+  const { id } = req.params;
 
   try {
-    
+    // on récupère la tâche, via le service en utilisant l'id en paramètre
+    const task = await TaskService.getTaskById(id);
+    return res.status(200).json({
+      status: 200,
+      result: task,
+    });
   } catch (e){
     return res.status(500).json({
-      success: false,
+      status: 500,
       message: e.message,
     });
   }
@@ -671,9 +748,181 @@ exports.getTaskById = async (req, res) => {
 exports.getTaskByName = async (req, res) => {
   if (!req.params.name) {
     return res.status(400).json({
-      success: false,
+      status: 400,
       message: 'Name missing',
     });
   }
-}
-``` 
+
+  const { name } = req.params;
+
+  try {
+    const task = await TaskService.getTaskByName(name);
+    return res.status(200).json({
+      status: 200,
+      result: task,
+    });
+  } catch (e){
+    return res.status(500).json({
+      status: 500,
+      message: e.message,
+    });
+  }
+};
+
+exports.createTask = async (req, res) => {
+    // attention, cette fois ci, les données sont dans le body, et non les paramètres, car c'est une requête POST
+    // on vérifie qu'on recoit bien les deux informations nécessaires pour définir une tâche : son nom et sa description
+  if (!req.body.name || !req.body.desc) {
+    return res.status(400).json({
+      status: 400,
+      message: 'Info missing',
+    });
+  }
+
+  // on stocke toutes les infos dans une variable
+  const task = req.body;
+  
+  try {
+    // on peut par exemple commencer par tester si le nom de la tâche qui doit être créée est déjà utilisé par une autre
+    if (await TaskService.getTaskByName(task.name)) {
+      // on considère qu'il n'y a pas eu de problème mais la création n'a pas pu se faire
+      // on renvoie donc un 200, car pas d'erreur interne ou venant de l'utilisateur, mais avec assez d'informations pour comprendre
+      return res.status(200).json({
+        status: 200,
+        result: false,
+        message: 'Name already taken by another task',
+      });
+    }
+
+    // si plusieurs erreurs sont à prévoir pour une même requête, il vaut mieux ajouter un attribut avec un code, pour pouvoir l'utiliser plus facilement qu'un simple texte
+
+    await TaskService.createTask(task);
+    // tu as surement remarqué que les valeurs 'date' & 'status' ne sont pas définis dans ce controleur
+    // il vaut mieux parfois mettre la valeur par défaut dans le service que dans le controleur... tout dépen d du besoin
+
+    return res.status(201).json({
+      status: 201,
+      // on renvoie un 201, qui signifie 'Created
+      // il vaut mieux utiliser les status précis comme celui-ci lorsqu'il est possible, pour faciliter la compréhension de l'API
+      result: true,
+    });
+  } catch (e) {
+    return res.status(500).json({
+      status: 500,
+      message: e.message,
+    });
+  }
+};
+
+exports.updateTask = async (req,res) => {
+  // on a au moins besoin de l'id de la tâche pour la modifier, on vérifie donc
+  if (!req.body.id) {
+    return res.status(400).json({
+      status: 400,
+      message: 'Id missing',
+    });
+  }
+
+  const task = req.body;
+
+  try {
+    // on vérifie tout d'abord si le nouveau nom est déjà utilisé par une autre tâche
+    // en vérifiant bien sur ce n'est pas la tâche en cours de modification
+    const sameNameTask = await TaskService.getTaskByName(task.name);
+    if (sameNameTask && sameNameTask._id !== task.id) {
+      return res.status(200).json({
+        status: 200,
+        result: false,
+        message: 'Name already taken by another task',
+      });
+    }
+
+    await TaskService.updateTask(task);
+    return res.status(200).json({
+      status: 200,
+      result: true,
+    });   
+  } catch (e) {
+    return res.status(500).json({
+      status: 500,
+      message: e.message,
+    });
+  }
+};
+
+exports.deleteTask = async (req, res) => {
+  if (!req.params.id) {
+    return res.status(400).json({
+      status: 400,
+      message: 'Id missing',
+    });
+  }
+
+  const { id } = req.params;
+
+  try {
+    await CompanyService.deleteCompany(id);
+    // comme le statut 204 ('No content') ne retourne pas de contenu, ça ne sert à rien de remplir un json pour prévenir que la suppression a bien eu lieu
+    return res.status(204);
+  } catch (e) {
+    return res.status(500).json({
+      status: 500,
+      message: e.message,
+    });
+  }
+};
+```
+
+On en a fini avec les contrôleur, il ne nous reste plus qu'à mettre en place les routes et notre API sera enfin prête pour créer, modifier et supprimer nos tâche.
+
+### 6. La couche API
+C'est ici que la relation entre routes (ou requêtes) et les fonctions créées dans les controlleurs va être faite.
+
+Comme pour l'exemple HelloWorld de l'API basique, nous allons maintenant créer un fichier `task.route.js` dans `/routes/api`
+
+**/routes/api/task.route.js**
+```js
+const express = require('express');
+const TaskController = require('../../controllers/task.controller');
+
+const router = express.Router();
+
+// Gets
+router.get('/', TaskController.getTasks);
+router.get('/id/:id', TaskController.getTaskById);
+router.get('/name/:name', TaskController.getTaskByName);
+
+// Edits
+router.post('/', TaskController.createTask);
+router.put('/', TaskController.updateTask);
+router.delete('/:id', TaskController.deleteTask);
+```
+
+Ne pas oublier également d'ajouter la route vers `task` dans `gate.route.js`
+
+**/routes/api/index.js**
+```js
+// ...
+
+router.use('/api', require('./api'));
+router.use('/task', require('./task'));
+
+// ...
+```
+
+Et nous avons enfin fini notre API, il était temps tu me diras.  
+Mais ne t'inquiète pas, à force de le faire avec plusieurs modèles différents, tu vas être de plus en plus performant et tu pourras faire une API clean en quelques instants seulement.
+
+### 7. Tester (c'est douter)
+Avant tout il faut bien lancer ton application avec 
+```sh
+$ npm run dev
+```
+
+Il ne reste plus qu'à lancer un logiciel comme  [Postman](https://www.getpostman.com/apps) pour pouvoir tester toutes les routes.
+
+### 8. Conclusion
+Notre API est maintenant prête à l'emploi pour gérer notre Todo List. On peut maintenant créer n'importe quel type d'application interagissant avec l'API.deleteTask
+
+Pour résumer le tout, on va rappeler le parcours d'une requête et la réponse associée :
+- Une requête est faite sur une route, disons `/tasks`
