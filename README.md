@@ -452,7 +452,9 @@ Une API c'est bien beau mais si elle ne sert qu'à nous renvoyer des Hello World
 C'est là que rentrent en jeu les bases de données. On va présenter deux types de BDD à coupler avec une API NodeJS/Express, puisqu'on est habitués à travailler avec, mais sache qu'il en existe un bon nombre.
 
 ## <a id="mysql"></a>MySQL
-Et on commence par (sûrement) le plus populaire, j'ai nommé MySql !  
+Et on commence par (sûrement) le plus populaire, j'ai nommé MySql !
+
+L'utilisation d'une Base de données MySQL
 (*En construction...*)
 
 ## <a id="mongodb"></a> MongoDB  
@@ -923,8 +925,15 @@ $ npm run dev
 
 Il ne reste plus qu'à lancer un logiciel comme  [Postman](https://www.getpostman.com/apps) pour pouvoir tester toutes les routes.
 
+> ⚠️ TODO Clary : Screens Postman
+
 ### 8. Conclusion
 Notre API est maintenant prête à l'emploi pour gérer notre Todo List. On peut maintenant créer n'importe quel type d'application interagissant avec l'API.deleteTask
 
 Pour résumer le tout, on va rappeler le parcours d'une requête et la réponse associée :
-- Une requête est faite sur une route, disons `/tasks`
+- Une requête est faite sur une route de l'API
+- Cette route va appeler la fonction nécessaire dans le contrôleur
+- Ce contrôleur va gérer les données reçues, les vérifier et les formatter pour ensuite les envoyer au service
+- Qui, lui-même, va faire l'action demandée (GET, UPDATE, etc.) sur le modèle puis renvoyer l'information au contrôleur
+- Qui va gérer la donnée reçue du service, la formater (eg. cacher les données sensibles) et renvoyer cette donnée, ou une erreur selon le résultat du service
+- L'utilisateur de l'API recevra donc une réponse avec les informations dont il a besoin, ou une erreur claire s'il y a
