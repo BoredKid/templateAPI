@@ -100,6 +100,8 @@ si l'app doit elle même effectuer des requêtes http (il existe des alternative
 si un accès à une base SQL est nécessaire
 - `mongoose`  
 si il y a besoin d'intéragir avec une base de donnée MongoDB. Pour plus d'info, c'est [par ici](#mongodb)
+- `dotenv`  
+pour la gestion des variables d'environnements
 
 ### DevDependencies
 Certains packages ne sont plus requis à partir du moment où l'application est mise en production. Comme par exemple un package permettant de corriger le formattage du code, etc.
@@ -224,17 +226,21 @@ const server = app.listen(process.env.PORT || port, () => {
 
 On précise ainsi qu'on va utiliser le port définit dans les variables d'environnement (obligatoire pour beaucoup de dispositif de mise en ligne eg:Heroku) et que si il n'y a pas de variable d'environnement on utilisera le port définit dans la variable `port` (8080 dans l'exemple ci-dessus).
 
-### Routes : Mieux qu'un GPS
+### <a id="routes"></a>Routes : Mieux qu'un GPS
 Les routes de notre API seront définies et documentées dans le dossier `route` dans lequel on trouvera un fichier appelé `gate.route.js` qui va accueillir toutes les requêtes comme indiqué dans le fichier `app.js` avec la ligne
 ```js
 app.use('', require('./route/gate.route'));
 ```
 
-Dans le fichier `gate.route.js`, on va pouvoir rediriger les différents services proposés par l'application comme l'api ou l'authentification (coming soon). On va `require` à chaque fois le dossier associée (qui contiendra un `index.js` qui sera donc automatiquement chargé). Par exemple, pour l'api:
+Dans le fichier `gate.route.js`, on va pouvoir rediriger les différents services proposés par l'application comme l'api ou l'authentification (coming soon). On va `require` à chaque fois le dossier associée (qui contiendra un `index.js` qui sera donc automatiquement chargé). 
+
+Par exemple, pour l'api, on va créer un dossier `api` au sein du dossier `routes` et on pourra alors écrire dans le fichier `gate.route.js`:
 ```js
 router.use('/api', require('./api'));
 ```
-Et pour chacun de ces `index.js`, on va appeler les différentes routes associés à ce service de notre applications. Par exemple, pour une api d'application de messagerie, l'index pourrait contenir:
+Et pour chacun de ces dossiers, dans leur `index.js` respectifs, on va appeler les différentes routes associés à ce service de notre applications. 
+
+Par exemple, pour une api d'application de messagerie, l'index qui se trouve dans le dossier `api` pourrait contenir:
 ```js
 router.use('/hello', require('./hello.route.js')); // une application de messagerie avec un bonus :)
 router.use('/user', require('./user.route.js'));
@@ -263,6 +269,23 @@ On peut voir qu'on définit deux routes GET et une route POST. Pour chaque route
 Bonne pratique: **un fichier route par controller** (ce qui correspondra en général pour une API avec mongo à un modèle mongoose mais après là ca dépend que de toi). Cela permet de savoir facilement où seront les fonctions utilisés pour un petit ensemble de route et ca évite les surplus d'imports par fichier.
 
 Si on résume à ce stade, on sait que la route "`<url>:8080/api/hello/Jackie`" va appeler la fonction `HelloController.helloName`.
+
+Résumé de la structure (seuls les fichiers utiliser dans cette partie sont mentionnés) :
+
+
+- `app.js`
+- `routes`
+  - `gate.route.js`
+  - `api`
+    - `index.js`
+    - `hello.route.js`
+    - ...
+  - `auth`
+    - `index.js`
+    - ...
+- `controllers`
+  - `hello.controller.js`
+
 
 Illustration ou TLDR:  
 *Appelle le service http* (app.js)
@@ -329,7 +352,11 @@ Je suis sur que t'es convaincu. Du coup, je vais te montrer comment configurer t
 
 Voici les différentes étapes que tu peux suivre si le coeur t'en dit:
 
-- Installer les packages Apidoc (si ca n'est pas déjà fait) comme indiqué [vers par ici](#packages)
+- Installer les packages Apidoc (si ca n'est pas déjà fait) comme indiqué [vers par ici](#packages)   
+_Bon pour les fainéants voilà :_
+```sh
+$ npm install --save-dev apidoc
+```
 - Renseigner les informations apidoc dans le `package.json` en tant que champ au même titre que `"scripts"` ou `"name"`
 ```js
     "apidoc": {
@@ -345,7 +372,7 @@ Voici les différentes étapes que tu peux suivre si le coeur t'en dit:
         "start": "node index.js",
         "dev": "nodemon index.js",
         "test": "eslint ./",
-        "apidoc": "apidoc -i ./ -o ./doc -e ./node_modules ./doc"// cette ligne
+        "apidoc": "apidoc -i ./ -o ./doc -e ./node_modules ./doc"// <- on ajoute cette ligne dans nos script
     },
 ```
 _`-i` indique les fichier à scanner (ici l'ensemble du dossier où ce trouve `package.json`)_
@@ -470,6 +497,13 @@ Pour illustrer mes propos, j'utiliserais l'exemple d'un simple annuaire d'utilis
 - `mail` : string correspondant à l'adresse mail du user
 - `phonenumber` : string correspondant au numéro de l'utilisateur
 
+Voici la liste des opérations que l'on pourra faire avec notre applications:
+- récupérer la liste de tous les users
+- récupérer la liste des users avec un certain lastname
+- créer un utilisateur
+- modifier/mettre à jour un user
+- supprimer un user
+
 ### Installation
 
 Pour installer `mysql`, on va utiliser la méthodes décrites [plus haut](#packages):
@@ -562,8 +596,407 @@ Tout d'abord, il faut appeler notre `connection` définit dans `connection.js` p
 const connection = require('./connection');
 const User = require('../models/user.model');
 ```
+La première opération que l'on va effectuer c'est la récupération de la liste des utilisateurs:
+```js
+exports.getUsers = async () => {
 
-(*En construction...*)
+  try {
+    const query = "SELECT * FROM users"; // une requête SQL classique
+    const sqlResult = await new Promise((resolve, reject) => {
+
+      con.query(query, (error, result) => {
+        if (error) return reject(error);
+        return resolve(result);
+      });
+
+      const users =[];
+
+      sqlResult.forEach(result =>{
+        // on remarque que le résultat d'une query est un tableau d'objet avec, pour champs, les différentes colonnes demandées
+        users.push(new User(
+          result.id,
+          result.firstname,
+          result.lastname,
+          result.mail,
+          result.phonenumber,
+        )); 
+      });
+
+      return users;
+  } catch (e) {
+    throw Error(`[GET Users] ${e}`);
+  }
+};
+```
+
+Les autres fonctions: 
+```js
+exports.getUsersByLastName = async (lastname) => {
+
+  try {
+    const query = `SELECT * FROM users WHERE lastname = '${lastname}'`;
+    const sqlResult = await new Promise((resolve, reject) => {
+
+      con.query(query, (error, result) => {
+        if (error) return reject(error);
+        return resolve(result);
+      });
+
+      const users =[];
+
+      sqlResult.forEach(result =>{
+        // on remarque que le résultat d'une query est un tableau d'objet avec, pour champs, les différentes colonnes demandées
+        users.push(new User(
+          result.id,
+          result.firstname,
+          result.lastname,
+          result.mail,
+          result.phonenumber,
+        )); 
+      });
+
+      return users;
+  } catch (e) {
+    throw Error(`[GET Users by lastname] ${e}`);
+  }
+};
+
+exports.createUser = async (newUser) => {
+  try {
+    const userId = -1;
+    const userFirstName = newUser.firstname || '';
+    const userLastName = newUser.lastname || '';
+    const userMail = newUser.mail || '';
+    const userPhoneNumber = newUser.phonenumber || '';
+
+    const user = new User(
+      userId, 
+      userFirstName,
+      userLastName,
+      userMail,
+      userPhoneNumber
+      );
+
+    const query = `INSERT INTO users ( firstname, lastname, mail, phonenumber) VALUES ( ${user.firstname}, ${userL.lastname}, ${user.mail}, ${user.phonenumber})`;
+    const sqlResult = await new Promise((resolve, reject) => {
+
+      con.query(query, (error, result) => {
+        if (error) return reject(error);
+        return resolve(result);
+      });
+
+      user.id=sqlResult.insertId; // on récupère l'id de la nouvelle entrée
+
+      return user; // on renvoit la nouvelle entrée (l'id sera une preuve de la prise en compte de l'insertion)
+  } catch (e) {
+    throw Error(`[POST User] ${e}`);
+  }
+};
+
+exports.updateUser = async (newUser) => {
+  try {
+    const userId = newUser.id; // la vérification de l'existence de cet id se fera sur la couche contrôleur
+    const userFirstName = newUser.firstname; // une donnée obligatoire
+    const userLastName = newUser.lastname; // une autre donnée obligatoire
+    const userMail = newUser.mail || '';
+    const userPhoneNumber = newUser.phonenumber || '';
+
+    const user = new User(
+      userId, 
+      userFirstName,
+      userLastName,
+      userMail,
+      userPhoneNumber
+      );
+
+    // on va créer la query adapter aux modifications qu'il faut apporter
+    let query = 'UPDATE users SET';
+
+    if(user.firstname.length>0){
+      query += ` firstname = '${user.firstname}',`
+    }
+    if(user.lastname.length>0){
+      query += ` lastname = '${user.lastname}',`
+    }
+    if(user.mail.length>0){
+      query += ` mail = '${user.mail}',`
+    }
+    if(user.phonenumber.length>0){
+      query += ` phonenumber = '${user.phonenumber}',`
+    }
+
+    query = query.slice(0,query.length - 1); // on retire la dernière virgule
+
+    query += ` WHERE id = ${user.id}`;
+
+    // on effectue la màj
+    const sqlUpdate = await new Promise((resolve, reject) => {
+
+      con.query(query, (error, result) => {
+        if (error) return reject(error);
+        return resolve(result);
+      });
+
+    // on va chercher l'entrée mise à jour
+    const queryModifiedUser = `SELECT * FROM users WHERE id = '${user.id}'`;
+    
+    const result = wait new Promise((resolve, reject) => {
+
+      con.query(query, (error, result) => {
+        if (error) return reject(error);
+        return resolve(result);
+      });
+
+    user = new User(
+      result.id,
+      result.firstname,
+      result.lastname,
+      result.mail,
+      result.phonenumber,
+    )); 
+
+    return user; // on renvoit la nouvelle entrée modifiée
+  } catch (e) {
+    throw Error(`[PUT User] ${e}`);
+  }
+};
+
+exports.deleteUser = async (id) => {
+
+  try {
+    const query = `DELETE FROM users WHERE id = ${id} `; // une requête SQL classique
+    const sqlResult = await new Promise((resolve, reject) => {
+
+      con.query(query, (error, result) => {
+        if (error) return reject(error);
+        return resolve(result);
+      });
+
+      return true;
+  } catch (e) {
+    throw Error(`[DELETE User] ${e}`);
+  }
+};
+```
+_On remarquera l'usage des différents verbes CRUD en lien avec la philosophie REST_
+
+### Contrôleur
+Nos fonctions de traitement sont prêtes on va pouvoir maintenant réaliser notre contrôleur.
+Le contrôleur va bien sur se trouver dans le dossier `controllers`. On va y créer un fichier `users.controller.js`:
+
+```js
+const UserService = require('../services/user.service.ts'); // on va utiliser le service défini précédemment
+
+
+exports.getUsers = async (req, res) => {
+  try {
+    // on utilise la fonction dédiée du service
+    const users = await UserService.getUsers();
+    // on renvoie une réponse avec un statut 200, pour prévenir que tout est ok
+    return res.status(200).json({
+      status: 200,
+      result: users,
+    });
+  } catch (e) {
+    // on renvoie une réponse avec un statut 500, pour prévenir que l'erreur est interne au serveur
+    // on rajoute également le message pour pouvoir tracer et corriger l'erreur par la suite
+    return res.status(500).json({
+      status: 500,
+      message: e.message,
+    });
+  }
+};
+
+exports.getUserByLastname = async (req, res) => {
+  
+  if (!req.params.lastname) {
+    return res.status(400).json({
+      status: 400,
+      message: 'Lastname missing',
+    });
+  }
+
+  const { lastname } = req.params;
+
+  try {
+    // on utilise la fonction dédiée du service
+    const users = await UserService.getUserByLastname(lastname);
+    // on renvoie une réponse avec un statut 200, pour prévenir que tout est ok
+    return res.status(200).json({
+      status: 200,
+      result: users,
+    });
+  } catch (e) {
+    // on renvoie une réponse avec un statut 500, pour prévenir que l'erreur est interne au serveur
+    // on rajoute également le message pour pouvoir tracer et corriger l'erreur par la suite
+    return res.status(500).json({
+      status: 500,
+      message: e.message,
+    });
+  }
+};
+
+exports.createUser = async (req, res) => {
+  
+  // on vérifie la présence du firstname et du lastname qui sont les infos minimums
+  // pour faire un enregistrement. On cherche dans le `body` car on sera dans le
+  // cadre d'un POST
+  if (!req.body.firstname || !req.body.lastname) {
+    return res.status(400).json({
+      status: 400,
+      message: 'Lastname missing',
+    });
+  }
+
+  const { firstname, lastname, mail, phonenumber } = req.body;
+
+  const user = {
+    firstname : firstname,
+    lastname: lastname,
+  }
+
+  // si il y a un mail et/ou un phonenumber on les inclut
+  if(mail){
+    user.mail = mail;
+  }
+  if(phonenumber){
+    user.phonenumber = phonenumber;
+  }
+
+  try {
+    // on utilise la fonction dédiée du service
+    const user = await UserService.createUser(user);
+    // on renvoie une réponse avec un statut 200, pour prévenir que tout est ok
+    return res.status(200).json({
+      status: 200,
+      result: user,
+    });
+  } catch (e) {
+    // on renvoie une réponse avec un statut 500, pour prévenir que l'erreur est interne au serveur
+    // on rajoute également le message pour pouvoir tracer et corriger l'erreur par la suite
+    return res.status(500).json({
+      status: 500,
+      message: e.message,
+    });
+  }
+};
+
+exports.updateUser = async (req, res) => {
+  
+  // on vérifie la présence d'un id
+  if (!req.body.id) {
+    return res.status(400).json({
+      status: 400,
+      message: 'id missing',
+    });
+  }
+
+  // on vérifie la présence d'un id
+  if (!req.body.firstname && !req.body.lastname && !req.body.mail && !req.body.phonenumber) {
+    return res.status(400).json({
+      status: 400,
+      message: 'New values missing',
+    });
+  }
+
+  const { id, firstname, lastname, mail, phonenumber } = req.body;
+
+  const user = {};
+
+  if(firstname){
+    user.firstname = firstname;
+  }
+  if(lastname){
+    user.lastname = lastname;
+  }
+  if(mail){
+    user.mail = mail;
+  }
+  if(phonenumber){
+    user.phonenumber = phonenumber;
+  }
+
+  try {
+    // on utilise la fonction dédiée du service
+    const user = await UserService.updateUser(user);
+    // on renvoie une réponse avec un statut 200, pour prévenir que tout est ok
+    return res.status(200).json({
+      status: 200,
+      result: user,
+    });
+  } catch (e) {
+    // on renvoie une réponse avec un statut 500, pour prévenir que l'erreur est interne au serveur
+    // on rajoute également le message pour pouvoir tracer et corriger l'erreur par la suite
+    return res.status(500).json({
+      status: 500,
+      message: e.message,
+    });
+  }
+};
+
+exports.deleteUser = async (req, res) => {
+  
+  if (!req.params.id) {
+    return res.status(400).json({
+      status: 400,
+      message: 'Id missing',
+    });
+  }
+
+  const { id } = req.params;
+
+  try {
+    await UserService.deleteUser(id);
+    // comme le statut 204 ('No content') ne retourne pas de contenu, ça ne sert à rien de remplir un json pour prévenir que la suppression a bien eu lieu
+    return res.status(204);
+  } catch (e) {
+    return res.status(500).json({
+      status: 500,
+      message: e.message,
+    });
+  }
+};
+```
+### Routes
+On y est presque. Dans cette partie, je vais supposer que vous avez votre `app.js` ainsi que le dossier `route`, le fichier `gate.route.js` et le dossier `api` et son `index.js` configure comme expliquer dans [ce paragraphe](#routes) qui se trouve plus haut dans ce Readme. 
+
+Prêt ? 
+
+C'est parti !
+
+Tout d'abord on va créer un fichier `users.route.js` dans le dossier `api` (qui se trouve lui même dans le dossier `routes`). Dans ce fichier, on va associer nos 5 routes à leurs traitements définis dans notre contrôleur:
+
+```js
+const express = require('express');
+
+// on va chercher le controller qui contient toutes nos fonctions
+const UserController = require('../../controllers/users.controller.js');
+
+const router = express.Router();
+
+router.get('/', UserController.getUsers); // l'url complète sera du type '<adresse>/api/users'
+
+router.get('/:lastname', UserController.getUsersByLastname);
+
+router.post('/', UserController.createUser);
+
+router.put('/', UserController.updateUser);
+
+router.delete('/:id', UserController.deleteUser);
+
+module.exports = router;
+```
+
+Toutes nos routes sont prêtes. Il reste plus qu'à indiquer à l'api l'existence de ces routes. On ajoute dans le fichier `index.js` qui se trouve dans le même dossier
+
+```js
+router.use('/users', require('./users.route.js'));
+```
+
+### Conclusion
+Ca y est ! Tu l'as fait félicitation !
+
+Il ne te reste plus qu'à tester (enfin seulement si tu doute de toi ou de moi) et à mettre en ligne ton API \o/ !
 
 ## <a id="mongodb"></a> MongoDB  
 Pour en venir aux bases de données type NoSQL, nous avons choisi MongoDB.
