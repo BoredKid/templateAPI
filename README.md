@@ -447,14 +447,122 @@ router.post('/', HelloController.helloName);
 ```
 
 ## <a id="bdd"></a> II - Base de données
-Une API c'est bien beau mais si elle ne sert qu'à nous renvoyer des Hello World, on ne va pas aller très loin - même si je peux comprendre le bonheur de recevoir un bonjour de quelqu'un, mais si ça vient d'un programme.
+Une API c'est bien beau mais si elle ne sert qu'à nous renvoyer des Hello World, on ne va pas aller très loin - même si je peux comprendre le bonheur de recevoir un bonjour de quelqu'un, même si ça vient d'un programme.
 
 C'est là que rentrent en jeu les bases de données. On va présenter deux types de BDD à coupler avec une API NodeJS/Express, puisqu'on est habitués à travailler avec, mais sache qu'il en existe un bon nombre.
 
 ## <a id="mysql"></a>MySQL
-Et on commence par (sûrement) le plus populaire, j'ai nommé MySql !
 
-L'utilisation d'une Base de données MySQL
+_Cette partie n'a pas encore été testé, il se peut qu'il y ait des disfonctionnements. Si tu rencontre des problèmes, n'hésite pas à les remonter :)_
+
+Et on commence par (sûrement) le plus populaire, j'ai nommé MySQL !
+
+L'utilisation d'une base de données MySQL dans un environnement node est facilité grâce au module npm qui s'appelle mysql (oh wow on l'avait pas vu venir).
+
+**ATTENTION :** nous ne verras pas dans ce tutoriel comment créer une base de donnée MySQL, nous allons simplement voir comment s'y connecter, y effectuer ses requêtes et organiser notre code. [Ici](https://openclassrooms.com/courses/administrez-vos-bases-de-donnees-avec-mysql) vous trouverez le tuto openclassroom dédié à MySQL.
+
+_Il existe un autre package npm plus complexe nommé `sequelize`. Le fonctionnement de ce module est proche de celui qu'on peut trouvé sur `mongoose` pour les bdd MongoDB._
+
+Pour illustrer mes propos, j'utiliserais l'exemple d'un simple annuaire d'utilisateurs. On va supposer qu'on a dans notre base de donnée une table `users` avec les colonnes suivantes : 
+- `id` : un identifiant unique (clé primaire) sous forme d'un entier. _On supposera que cette colonne s'auto-incrémente à chaque nouvelle entrée._
+- `firstname` : string correspondant au prénom du user
+- `lastname` : string correspondant au nom de famille du user
+- `mail` : string correspondant à l'adresse mail du user
+- `phonenumber` : string correspondant au numéro de l'utilisateur
+
+### Installation
+
+Pour installer `mysql`, on va utiliser la méthodes décrites [plus haut](#packages):
+
+```sh
+$ npm install --save mysql
+``` 
+
+On installe ainsi mysql dans les nodes_modules et on sauvegarde le package et sa version dans les dépendances (`package.json`).
+
+### Les fonctions principales
+
+Il existe 4 fonctions clés dans le module `mysql`:
+- `creatConnection` : permet de configurer une connexion
+- `connect`: ouvre la connexion avec la base de donnée
+- `query`: effectue une requête passer en argument et les résultats pourront êtres traités dans la callback qui sera passer en deuxième argument. _On notera que `query` contient un `connect` implicite, il est donc possible d'utiliser `query` sans avoir utiliser `connect`. Néanmoins, il peut être intéressant d'utiliser `connect` pour pouvoir mieux gérer ses erreurs._ 
+- `end` : termine et ferme la connexion
+
+Ci-dessous un exemple (tiré de la [page npm du module](https://www.npmjs.com/package/mysql)) simple d'usages de ces différentes fonction:
+
+```js
+const mysql = require('mysql');
+
+// on configure notre connexion
+const connection = mysql.createConnection({
+  host     : 'localhost',
+  user     : 'me',
+  password : 'secret',
+  database : 'my_db'
+});
+ 
+ // on ouvre la connexion
+connection.connect();
+ 
+ // on effectue une requête
+connection.query('SELECT 1 + 1 AS solution', function (error, results, fields) {
+  if (error) throw error;
+  console.log('The solution is: ', results[0].solution); // ici le traitement appliqué au résultat de notre requête
+});
+ 
+ // on ferme la connexion
+connection.end();
+```
+
+### Modèle
+
+Pour organiser notre code, nous allons créer un modèle `User` qui sera la structure qu'on manipulera à chaque fois.
+
+On va créer un dossier `models` à la racine de notre projet. 
+
+Dans ce dossier, on crée donc un fichier `user.model.js` qui contient:
+```js
+module.exports = class User{
+  constructor( id, firstname, lastname, mail, phonenumber){
+    this.id = id;
+    this.firstname = firstname;
+    this.lastname = lastname;
+    this.mail = mail;
+    this.phonenumber = phonenumber;
+  }
+}
+```
+
+### Service
+
+C'est au niveau des services qu'on va établir la connexion avec la base de donnée et effectuer nos différentes requête sur celle-ci.
+
+On créer donc un dossier `services` à la racine du projet. On va créer un fichier `connection.js` dans ce dossier. C'est ici qu'on va configurer notre connexion:
+
+```js
+const mysql = require('mysql');
+
+const connection = mysql.createConnection({
+    host: 'localhost', // adresse de l'hébergement de votre BDD
+    user: 'user', // username d'identification à la base
+    password: 'aGoodPassword', // mot de passe d'identification à la base
+    database: 'db_name', // le nom de la base de donnée
+});
+
+module.exports = connection;
+```
+
+Cette `connection` sera utilisé par tous les services (bon ici il y en a qu'un seul je sais mais bon si jamais il y en avait plusieurs et bien ... euh ... voilà ! Je suis pas venu ici pour souffrir OKAY !)
+
+Nous allons d'ailleurs créer le service dédié aux users que l'on va évidemment appeler `user.service.js`. Ce fichier qui se trouve aussi dans le dossier `services` va contenir toutes les fonctions disponibles pour les différentes routes de l'api.
+
+Tout d'abord, il faut appeler notre `connection` définit dans `connection.js` pour pouvoir l'utiliser. Il nous faut aussi le modèle dédié que nous avons créer plus tôt.
+
+```js
+const connection = require('./connection');
+const User = require('../models/user.model');
+```
+
 (*En construction...*)
 
 ## <a id="mongodb"></a> MongoDB  
