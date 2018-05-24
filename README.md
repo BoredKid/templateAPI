@@ -409,11 +409,12 @@ Voici deux exemples simples tirés directement du template:
  * @apiDescription Cette route dit bonjour.
  *
  * @apiSuccess {String} message "Hello World"
- * @apiSuccess {String} success true
+ * @apiSuccess {String} status 200
  *
  * @apiSuccessExample Success-Response:
  *  {
- *    "message": "Hello World!"
+ *    "message": "Hello World!",
+ *    "status": 200,
  *  }
  *
  */
@@ -433,11 +434,12 @@ router.get('/', HelloController.helloWorld);
  *  }
  *
  * @apiSuccess {String} message "Hello {your name here}"
- * @apiSuccess {String} success true
+ * @apiSuccess {String} status 200
  *
  * @apiSuccessExample Success-Response:
  *  {
- *    "message": "Hello Jackie!"
+ *    "message": "Hello Jackie!",
+ *    "status": 200
  *  }
  *
  */
