@@ -486,7 +486,7 @@ Et on commence par (sûrement) le plus populaire, j'ai nommé MySQL !
 
 L'utilisation d'une base de données MySQL dans un environnement node est facilité grâce au module npm qui s'appelle mysql (oh wow on l'avait pas vu venir).
 
-**ATTENTION :** nous ne verras pas dans ce tutoriel comment créer une base de donnée MySQL, nous allons simplement voir comment s'y connecter, y effectuer ses requêtes et organiser notre code. [Ici](https://openclassrooms.com/courses/administrez-vos-bases-de-donnees-avec-mysql) vous trouverez le tuto openclassroom dédié à MySQL.
+**ATTENTION :** nous ne verrons pas dans ce tutoriel comment créer une base de donnée MySQL, nous allons simplement voir comment s'y connecter, y effectuer ses requêtes et organiser notre code. [Ici](https://openclassrooms.com/courses/administrez-vos-bases-de-donnees-avec-mysql) vous trouverez le tuto OpenClassroom dédié à MySQL.
 
 _Il existe un autre package npm plus complexe nommé `sequelize`. Le fonctionnement de ce module est proche de celui qu'on peut trouvé sur `mongoose` pour les bdd MongoDB._
 
@@ -506,13 +506,13 @@ Voici la liste des opérations que l'on pourra faire avec notre applications:
 
 ### Installation
 
-Pour installer `mysql`, on va utiliser la méthodes décrites [plus haut](#packages):
+Pour installer `mysql`, on va utiliser la méthode décrites[plus haut](#packages):
 
 ```sh
 $ npm install --save mysql
 ``` 
 
-On installe ainsi mysql dans les nodes_modules et on sauvegarde le package et sa version dans les dépendances (`package.json`).
+On installe ainsi mysql dans les `nodes_modules` et on sauvegarde le package et sa version dans les dépendances (`package.json`).
 
 ### Les fonctions principales
 
@@ -522,7 +522,7 @@ Il existe 4 fonctions clés dans le module `mysql`:
 - `query`: effectue une requête passer en argument et les résultats pourront êtres traités dans la callback qui sera passer en deuxième argument. _On notera que `query` contient un `connect` implicite, il est donc possible d'utiliser `query` sans avoir utiliser `connect`. Néanmoins, il peut être intéressant d'utiliser `connect` pour pouvoir mieux gérer ses erreurs._ 
 - `end` : termine et ferme la connexion
 
-Ci-dessous un exemple (tiré de la [page npm du module](https://www.npmjs.com/package/mysql)) simple d'usages de ces différentes fonction:
+Ci-dessous un exemple simple (tiré de la [page npm du module](https://www.npmjs.com/package/mysql)) d'utilisation de ces différentes fonction:
 
 ```js
 const mysql = require('mysql');
@@ -958,7 +958,7 @@ exports.deleteUser = async (req, res) => {
 };
 ```
 ### Routes
-On y est presque. Dans cette partie, je vais supposer que vous avez votre `app.js` ainsi que le dossier `route`, le fichier `gate.route.js` et le dossier `api` et son `index.js` configure comme expliquer dans [ce paragraphe](#routes) qui se trouve plus haut dans ce Readme. 
+On y est presque. Dans cette partie, je vais supposer que vous avez votre `app.js` ainsi que le dossier `route`, le fichier `gate.route.js` et le dossier `api` et son `index.js` configurés comme expliquer dans [ce paragraphe](#routes) qui se trouve plus haut dans ce Readme. 
 
 Prêt ? 
 
