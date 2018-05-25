@@ -1027,7 +1027,8 @@ Il y a cependant un bon nombre qui peuvent compléter pour apporter des fonction
 Concernant la dépendance "mère", nous avons choisi d'utiliser l'ODM `mongoose`. Pour l'installer, rien de plus simple :
 
 ```sh
-$ npm install --save mongoose
+$ npm install --save mongoose bluebird
+# bluebird est un utilitaire permettant de gérer les Promise de mongoose
 ```
 
 Pour les dépendances complémentaires, n'hésite pas à visiter [le site npmjs](https://www.npmjs.com/search?q=mongoose) pour trouver votre bonheur, comme par exemple :
@@ -1037,8 +1038,6 @@ pour gérer les contraintes sur un type de données (respecter une taille, un fo
 pour faciliter les requêtes sous forme paginée
 - _et bien d'autres..._
 
-D'autres packages peuvent être intéressants pour travailler de pair avec mongoose, comme `bluebird` qui est un utilitaire permettant de gérer les `Promise` retournées par les requêtes, et rendre le tout plus performant.
-
 ### 2 - `app.js`
 Maintenant que tous les packages nécessaires sont installés, on va pouvoir passer à la préparation de notre fichier `app.js` pour gérer la base de données.
 
@@ -1047,29 +1046,55 @@ Premièrement, nous allons devoir importer quelques packages à notre projet :
 ```js
 const mongoose = require('mongoose');
 const bluebird = require('bluebird');
+require('dotenv').config();
 
 mongoose.Promise = bluebird;
+
+const app = express();
+//...
 ```
 
-Concernant ta BDD Mongo, on suggère fortement de mettre en place un système d'utilisateur pour accéder aux données, ce qui n'est pas par défaut - aussi bizzare que cela puisse être.
+Concernant ta BDD Mongo, on suggère fortement de mettre en place un système d'utilisateur pour accéder aux données, ce qui n'est pas par défaut - aussi bizzare que cela puisse être.  
+Utiliser un fichier `.env` en parallèle avec le package `dotenv` sera un gros plus pour ton application, car ça permettra d'être dynamique et de pouvoir changer les valeurs sans pour autant toucher au code en lui même. En voici un exemple :
 
-> ⚠️ TODO Nico: Gérer les utilisateurs Mongo
+**/.env**
+```bash
+# APP #
+PORT=8080
+# le port de l'application
 
-Après avoir créé ton administrateur de BDD, il faut renseigner les informations pour te connecter à celle-ci :
 
+# DB #
+DB_USERNAME="admin"
+DB_PASSWORD="ZrvmXqcT2qbT7C41W9Ef"
+# quelque chose de long et compliqué, pas besoin de le retenir
+# tu n'auras pas à le retaper
+DB_HOST="localhost"
+# peut être modifié si l'application est mise en production
+DB_PORT="27017"
+DB_NAME="admin"
+# la base de données où ton utilisateur est défini et où les requêtes se feront
+```
+
+Maintenant, il faut modifier le fichier `app.js` pour connecter l'application à la base de données Mongo.
+
+**/app.js**
 ```js
 // ...
 mongoose.Promise = bluebird;
 
-const username = 'admin';
-const password = '<password>'; // quelque chose de long et compliqué, pas besoin de le retenir, tun n'auras pas à le retaper
-const serverUrl = 'localhost:27017'; // le port est à modifier si nécessaire, ou l'url toute entière si tu passes par des containers par exmeple
-const db = '<database>'; // la base de données où ton utilisateur est défini
+const username = process.env.DB_USERNAME;
+const password = process.env.DB_PASSWORD;
+const serverUrl = `${process.env.DB_HOST}:${process.env.DB_PORT}`;
+const db = process.env.DB_NAME;
 
 const dbUrl = `mongodb://${username}:${password}@${serverUrl}/${db}`;
+// const dbUrl = `mongodb://${serverUrl}/${db}`;
+// utiliser le 2e si vous tu n'as pas mis en place les utilisateurs
+
 mongoose.connect(dbUrl)
-  .then(() => { console.log(`Erreur lors de la connection à ${dbUrl} !`); })
-  .catch(() => { console.log(`Connecté à ${dbUrl} avec succès !`); });
+  .then(() => { console.log(`Connecté à ${dbUrl} avec succès !`); })
+  .catch(() => { console.log(`Erreur lors de la connection à ${dbUrl} !`); });
 // Ces logs permettent de voir en un coup d'oeil si la connection a bien eu lieu
 
 const app = express();
@@ -1083,7 +1108,7 @@ $ npm run dev
 ```
 
 Si tout se passe bien, tu es censé voir (ou quelque chose dans le genre)
-> Connecté à mongodb://admin:7MTcEtLTjReYXk4tAJXd@localhost:27017/admin avec succès !
+> Connecté à mongodb://admin:ZrvmXqcT2qbT7C41W9Ef@localhost:27017/admin avec succès !
 
 Sinon, vérfie l'url de la base de données, les paramètres de connexion ou qu'une instance de Mongo [a bien été lancée précédemment](#mongod).
 
@@ -1138,7 +1163,8 @@ Nous allons donc créer le service lié à notre modèle `Task`, avec le fichier
 const Task = require('../models/task.model');
 
 // on définit ensuite les différentes actions possibles par la suite
-// toutes les fonctions sont asynchrones pour être sur d'attendre la donnée venant de mongo avant de transmettre aux contrôleurs
+// toutes les fonctions sont asynchrones pour être sur d'attendre la donnée
+// venant de mongo avant de transmettre aux contrôleurs
 
 // récupérer toutes les tâches
 exports.getTasks = async () => {
@@ -1168,7 +1194,7 @@ exports.getTaskById = async (id) => {
 
 // récupérer une tâche par rapport à son nom
 exports.getTaskByName = async (name) => {
-   try {
+  try {
     return await Task.findOne({ name }, (err, task) => {
       if (err) throw err;
       return task;
@@ -1205,7 +1231,7 @@ exports.updateTask = async (task) => {
     oldTask.desc = task.desc || oldTask.desc;
     oldTask.date = task.date || oldTask.date;
     oldTask.status = task.status || oldTask.status;
-    
+
     const result = await oldTask.save();
     return result;
   } catch (e) {
@@ -1238,9 +1264,10 @@ Il permettra de :
 
 **/controllers/task.controller.js**
 ```js
-const TaskService = require('../services/task.service.ts');
+const TaskService = require('../services/task.service');
 
-// comme pour les services, on entour de try catch pour détecter les erreurs - dont celles générées par le service
+// comme pour les services, on entour de try catch pour détecter les erreurs
+// dont celles générées par le service
 // les services étant asynchrones, les contrôleurs doivent également l'être
 
 exports.getTasks = async (req, res) => {
@@ -1251,7 +1278,9 @@ exports.getTasks = async (req, res) => {
     // avec les informations demandées, ici la liste de toutes les tâches
     return res.status(200).json({
       status: 200,
-      result: tasks, // on pourrait utiliser .map(() si on devait formatter les infos envoyées, comme enlever les données sensibles (password pour un utilisateur), etc.
+      result: tasks,
+      // on pourrait utiliser .map(() si on devait formatter les infos envoyées
+      // comme enlever les données sensibles (password pour un utilisateur), etc.
     });
   } catch (e) {
     // on renvoie une réponse avec un statut 500, pour prévenir que l'erreur est interne au serveur
@@ -1272,7 +1301,7 @@ exports.getTaskById = async (req, res) => {
       message: 'Id missing',
     });
   }
-  
+
   const { id } = req.params;
 
   try {
@@ -1282,7 +1311,7 @@ exports.getTaskById = async (req, res) => {
       status: 200,
       result: task,
     });
-  } catch (e){
+  } catch (e) {
     return res.status(500).json({
       status: 500,
       message: e.message,
@@ -1306,7 +1335,7 @@ exports.getTaskByName = async (req, res) => {
       status: 200,
       result: task,
     });
-  } catch (e){
+  } catch (e) {
     return res.status(500).json({
       status: 500,
       message: e.message,
@@ -1315,8 +1344,10 @@ exports.getTaskByName = async (req, res) => {
 };
 
 exports.createTask = async (req, res) => {
-    // attention, cette fois ci, les données sont dans le body, et non les paramètres, car c'est une requête POST
-    // on vérifie qu'on recoit bien les deux informations nécessaires pour définir une tâche : son nom et sa description
+  // attention, cette fois ci, les données sont dans le body
+  // et non les paramètrescar c'est une requête POST
+  // on vérifie qu'on recoit bien les deux informations nécessaires
+  // pour définir une tâche : son nom et sa description
   if (!req.body.name || !req.body.desc) {
     return res.status(400).json({
       status: 400,
@@ -1326,12 +1357,15 @@ exports.createTask = async (req, res) => {
 
   // on stocke toutes les infos dans une variable
   const task = req.body;
-  
+
   try {
-    // on peut par exemple commencer par tester si le nom de la tâche qui doit être créée est déjà utilisé par une autre
+    // on peut par exemple commencer par tester si le nom de la tâche
+    // qui doit être créée est déjà utilisé par une autre
     if (await TaskService.getTaskByName(task.name)) {
-      // on considère qu'il n'y a pas eu de problème mais la création n'a pas pu se faire
-      // on renvoie donc un 200, car pas d'erreur interne ou venant de l'utilisateur, mais avec assez d'informations pour comprendre
+      // on considère qu'il n'y a pas eu de problème
+      // mais la création n'a pas pu se faire
+      // on renvoie donc un 200, car pas d'erreur interne ou venant de l'utilisateur
+      // mais avec assez d'informations pour comprendre
       return res.status(200).json({
         status: 200,
         result: false,
@@ -1339,16 +1373,21 @@ exports.createTask = async (req, res) => {
       });
     }
 
-    // si plusieurs erreurs sont à prévoir pour une même requête, il vaut mieux ajouter un attribut avec un code, pour pouvoir l'utiliser plus facilement qu'un simple texte
+    // si plusieurs erreurs sont à prévoir pour une même requête
+    // il vaut mieux ajouter un attribut avec un code
+    // pour pouvoir l'utiliser plus facilement qu'un simple texte
 
     await TaskService.createTask(task);
-    // tu as surement remarqué que les valeurs 'date' & 'status' ne sont pas définis dans ce controleur
-    // il vaut mieux parfois mettre la valeur par défaut dans le service que dans le controleur... tout dépen d du besoin
+    // tu as surement remarqué que les valeurs 'date' & 'status'
+    // ne sont pas définis dans ce controleur
+    // il vaut mieux parfois mettre la valeur par défaut dans le service
+    // que dans le controleur... tout dépend du besoin
 
     return res.status(201).json({
       status: 201,
       // on renvoie un 201, qui signifie 'Created
-      // il vaut mieux utiliser les status précis comme celui-ci lorsqu'il est possible, pour faciliter la compréhension de l'API
+      // il vaut mieux utiliser les status précis comme celui-ci lorsqu'il est possible
+      // pour faciliter la compréhension de l'API
       result: true,
     });
   } catch (e) {
@@ -1359,7 +1398,7 @@ exports.createTask = async (req, res) => {
   }
 };
 
-exports.updateTask = async (req,res) => {
+exports.updateTask = async (req, res) => {
   // on a au moins besoin de l'id de la tâche pour la modifier, on vérifie donc
   if (!req.body.id) {
     return res.status(400).json({
@@ -1374,7 +1413,7 @@ exports.updateTask = async (req,res) => {
     // on vérifie tout d'abord si le nouveau nom est déjà utilisé par une autre tâche
     // en vérifiant bien sur ce n'est pas la tâche en cours de modification
     const sameNameTask = await TaskService.getTaskByName(task.name);
-    if (sameNameTask && sameNameTask._id !== task.id) {
+    if (sameNameTask && sameNameTask._id !== task.id) { // eslint-disable-line no-underscore-dangle
       return res.status(200).json({
         status: 200,
         result: false,
@@ -1386,7 +1425,7 @@ exports.updateTask = async (req,res) => {
     return res.status(200).json({
       status: 200,
       result: true,
-    });   
+    });
   } catch (e) {
     return res.status(500).json({
       status: 500,
@@ -1406,8 +1445,9 @@ exports.deleteTask = async (req, res) => {
   const { id } = req.params;
 
   try {
-    await CompanyService.deleteCompany(id);
-    // comme le statut 204 ('No content') ne retourne pas de contenu, ça ne sert à rien de remplir un json pour prévenir que la suppression a bien eu lieu
+    await TaskService.deleteTask(id);
+    // comme le statut 204 ('No content') ne retourne pas de contenu
+    // ça ne sert à rien de remplir un json pour prévenir que la suppression a bien eu lieu
     return res.status(204);
   } catch (e) {
     return res.status(500).json({
@@ -1441,6 +1481,8 @@ router.get('/name/:name', TaskController.getTaskByName);
 router.post('/', TaskController.createTask);
 router.put('/', TaskController.updateTask);
 router.delete('/:id', TaskController.deleteTask);
+
+module.exports = router;
 ```
 
 Ne pas oublier également d'ajouter la route vers `task` dans `gate.route.js`
@@ -1458,18 +1500,13 @@ router.use('/task', require('./task'));
 Et nous avons enfin fini notre API, il était temps tu me diras.  
 Mais ne t'inquiète pas, à force de le faire avec plusieurs modèles différents, tu vas être de plus en plus performant et tu pourras faire une API clean en quelques instants seulement.
 
-### 7. Tester (c'est douter)
-Avant tout il faut bien lancer ton application avec 
+### 7. Conclusion
+Tu peux maintenant lancer l'application avec 
 ```sh
 $ npm run dev
 ```
 
-Il ne reste plus qu'à lancer un logiciel comme  [Postman](https://www.getpostman.com/apps) pour pouvoir tester toutes les routes.
-
-> ⚠️ TODO Clary : Screens Postman
-
-### 8. Conclusion
-Notre API est maintenant prête à l'emploi pour gérer notre Todo List. On peut maintenant créer n'importe quel type d'application interagissant avec l'API.deleteTask
+Notre API est dorénavant prête à l'emploi pour gérer notre Todo List. On peut maintenant créer n'importe quel type d'application interagissant avec l'API.
 
 Pour résumer le tout, on va rappeler le parcours d'une requête et la réponse associée :
 - Une requête est faite sur une route de l'API
