@@ -480,8 +480,6 @@ C'est là que rentrent en jeu les bases de données. On va présenter deux types
 
 ## <a id="mysql"></a>MySQL
 
-_Cette partie n'a pas encore été testé, il se peut qu'il y ait des disfonctionnements. Si tu rencontre des problèmes, n'hésite pas à les remonter :)_
-
 Et on commence par (sûrement) le plus populaire, j'ai nommé MySQL !
 
 L'utilisation d'une base de données MySQL dans un environnement node est facilité grâce au module npm qui s'appelle mysql (oh wow on l'avait pas vu venir).
@@ -517,7 +515,7 @@ On installe ainsi mysql dans les `nodes_modules` et on sauvegarde le package et 
 ### Les fonctions principales
 
 Il existe 4 fonctions clés dans le module `mysql`:
-- `creatConnection` : permet de configurer une connexion
+- `createConnection` : permet de configurer une connexion
 - `connect`: ouvre la connexion avec la base de donnée
 - `query`: effectue une requête passer en argument et les résultats pourront êtres traités dans la callback qui sera passer en deuxième argument. _On notera que `query` contient un `connect` implicite, il est donc possible d'utiliser `query` sans avoir utiliser `connect`. Néanmoins, il peut être intéressant d'utiliser `connect` pour pouvoir mieux gérer ses erreurs._ 
 - `end` : termine et ferme la connexion
@@ -556,7 +554,7 @@ On va créer un dossier `models` à la racine de notre projet.
 
 Dans ce dossier, on crée donc un fichier `user.model.js` qui contient:
 ```js
-module.exports = class User{
+module.exports = class User {
   constructor( id, firstname, lastname, mail, phonenumber){
     this.id = id;
     this.firstname = firstname;
@@ -566,6 +564,10 @@ module.exports = class User{
   }
 }
 ```
+
+_Dans ce tutoriel les avantages, d'utiliser un tel modèle ne seront pas forcément mis en avant mais pour une application plus sophistiquée, on peut créer des méthodes de classe ou différents constructeurs qui seront utiles pour factoriser un maximum le code. On pourra pourquoi pas faire appel à d'autres modèles pour un modèle plus complexe._
+
+_De plus avec des outils comme `sequelize` cité plus haut, je peux configurer ma base de donnée par ces modèles un peu comme il est fait dans l'exemple MongoDB qui se trouve plus bas._
 
 ### Service
 
@@ -588,74 +590,67 @@ module.exports = connection;
 
 Cette `connection` sera utilisé par tous les services (bon ici il y en a qu'un seul je sais mais bon si jamais il y en avait plusieurs et bien ... euh ... voilà ! Je suis pas venu ici pour souffrir OKAY !)
 
-Nous allons d'ailleurs créer le service dédié aux users que l'on va évidemment appeler `user.service.js`. Ce fichier qui se trouve aussi dans le dossier `services` va contenir toutes les fonctions disponibles pour les différentes routes de l'api.
+Nous allons d'ailleurs créer le service dédié aux users que l'on va évidemment appeler `users.service.js`. Ce fichier qui se trouve aussi dans le dossier `services` va contenir toutes les fonctions disponibles pour les différentes routes de l'api.
 
 Tout d'abord, il faut appeler notre `connection` définit dans `connection.js` pour pouvoir l'utiliser. Il nous faut aussi le modèle dédié que nous avons créer plus tôt.
 
 ```js
-const connection = require('./connection');
+const con = require('./connection');
 const User = require('../models/user.model');
-```
-La première opération que l'on va effectuer c'est la récupération de la liste des utilisateurs:
-```js
+
 exports.getUsers = async () => {
-
   try {
-    const query = "SELECT * FROM users"; // une requête SQL classique
+    const query = 'SELECT * FROM users'; // une requête SQL classique
     const sqlResult = await new Promise((resolve, reject) => {
-
       con.query(query, (error, result) => {
         if (error) return reject(error);
         return resolve(result);
       });
+    });
 
-      const users =[];
+    const users = [];
 
-      sqlResult.forEach(result =>{
-        // on remarque que le résultat d'une query est un tableau d'objet avec, pour champs, les différentes colonnes demandées
-        users.push(new User(
-          result.id,
-          result.firstname,
-          result.lastname,
-          result.mail,
-          result.phonenumber,
-        )); 
-      });
+    sqlResult.forEach((result) => {
+      // on remarque que le résultat d'une query est un tableau d'objet avec,
+      // pour champs, les différentes colonnes demandées
+      users.push(new User(
+        result.id,
+        result.firstname,
+        result.lastname,
+        result.mail,
+        result.phonenumber,
+      ));
+    });
 
-      return users;
+    return users;
   } catch (e) {
     throw Error(`[GET Users] ${e}`);
   }
 };
-```
 
-Les autres fonctions: 
-```js
-exports.getUsersByLastName = async (lastname) => {
-
+exports.getUserByLastname = async (lastname) => {
   try {
     const query = `SELECT * FROM users WHERE lastname = '${lastname}'`;
     const sqlResult = await new Promise((resolve, reject) => {
-
       con.query(query, (error, result) => {
         if (error) return reject(error);
         return resolve(result);
       });
+    });
 
-      const users =[];
+    const users = [];
 
-      sqlResult.forEach(result =>{
-        // on remarque que le résultat d'une query est un tableau d'objet avec, pour champs, les différentes colonnes demandées
-        users.push(new User(
-          result.id,
-          result.firstname,
-          result.lastname,
-          result.mail,
-          result.phonenumber,
-        )); 
-      });
+    sqlResult.forEach((result) => {
+      users.push(new User(
+        result.id,
+        result.firstname,
+        result.lastname,
+        result.mail,
+        result.phonenumber,
+      ));
+    });
 
-      return users;
+    return users;
   } catch (e) {
     throw Error(`[GET Users by lastname] ${e}`);
   }
@@ -670,24 +665,25 @@ exports.createUser = async (newUser) => {
     const userPhoneNumber = newUser.phonenumber || '';
 
     const user = new User(
-      userId, 
+      userId,
       userFirstName,
       userLastName,
       userMail,
-      userPhoneNumber
-      );
+      userPhoneNumber,
+    );
 
-    const query = `INSERT INTO users ( firstname, lastname, mail, phonenumber) VALUES ( ${user.firstname}, ${userL.lastname}, ${user.mail}, ${user.phonenumber})`;
+    const query = `INSERT INTO users ( firstname, lastname, mail, phonenumber) VALUES ( '${user.firstname}', '${user.lastname}', '${user.mail}', '${user.phonenumber}')`;
     const sqlResult = await new Promise((resolve, reject) => {
-
       con.query(query, (error, result) => {
         if (error) return reject(error);
         return resolve(result);
       });
+    });
 
-      user.id=sqlResult.insertId; // on récupère l'id de la nouvelle entrée
+    user.id = sqlResult.insertId; // on récupère l'id de la nouvelle entrée
 
-      return user; // on renvoit la nouvelle entrée (l'id sera une preuve de la prise en compte de l'insertion)
+    // on renvoit la nouvelle entrée (l'id sera une preuve de la prise en compte de l'insertion)
+    return user;
   } catch (e) {
     throw Error(`[POST User] ${e}`);
   }
@@ -695,65 +691,66 @@ exports.createUser = async (newUser) => {
 
 exports.updateUser = async (newUser) => {
   try {
-    const userId = newUser.id; // la vérification de l'existence de cet id se fera sur la couche contrôleur
-    const userFirstName = newUser.firstname; // une donnée obligatoire
-    const userLastName = newUser.lastname; // une autre donnée obligatoire
+    // la vérification de l'existence de cet id se fera sur la couche contrôleur
+    const userId = newUser.id;
+    const userFirstName = newUser.firstname || '';
+    const userLastName = newUser.lastname || '';
     const userMail = newUser.mail || '';
     const userPhoneNumber = newUser.phonenumber || '';
 
-    const user = new User(
-      userId, 
+    let user = new User(
+      userId,
       userFirstName,
       userLastName,
       userMail,
-      userPhoneNumber
-      );
+      userPhoneNumber,
+    );
 
     // on va créer la query adapter aux modifications qu'il faut apporter
     let query = 'UPDATE users SET';
 
-    if(user.firstname.length>0){
-      query += ` firstname = '${user.firstname}',`
+    if (user.firstname.length > 0) {
+      query += ` firstname = '${user.firstname}',`;
     }
-    if(user.lastname.length>0){
-      query += ` lastname = '${user.lastname}',`
+    if (user.lastname.length > 0) {
+      query += ` lastname = '${user.lastname}',`;
     }
-    if(user.mail.length>0){
-      query += ` mail = '${user.mail}',`
+    if (user.mail.length > 0) {
+      query += ` mail = '${user.mail}',`;
     }
-    if(user.phonenumber.length>0){
-      query += ` phonenumber = '${user.phonenumber}',`
+    if (user.phonenumber.length > 0) {
+      query += ` phonenumber = '${user.phonenumber}',`;
     }
 
-    query = query.slice(0,query.length - 1); // on retire la dernière virgule
+    query = query.slice(0, query.length - 1); // on retire la dernière virgule
 
     query += ` WHERE id = ${user.id}`;
 
     // on effectue la màj
-    const sqlUpdate = await new Promise((resolve, reject) => {
-
+    await new Promise((resolve, reject) => {
       con.query(query, (error, result) => {
         if (error) return reject(error);
         return resolve(result);
       });
+    });
 
     // on va chercher l'entrée mise à jour
-    const queryModifiedUser = `SELECT * FROM users WHERE id = '${user.id}'`;
-    
-    const result = wait new Promise((resolve, reject) => {
-
-      con.query(query, (error, result) => {
+    const queryModifiedUser = `SELECT * FROM users WHERE id = ${user.id}`;
+    const res = await new Promise((resolve, reject) => {
+      con.query(queryModifiedUser, (error, result) => {
         if (error) return reject(error);
         return resolve(result);
       });
+    });
 
+    // le résultat de la requête est un tableau
     user = new User(
-      result.id,
-      result.firstname,
-      result.lastname,
-      result.mail,
-      result.phonenumber,
-    )); 
+      res[0].id,
+      res[0].firstname,
+      res[0].lastname,
+      res[0].mail,
+      res[0].phonenumber,
+    );
 
     return user; // on renvoit la nouvelle entrée modifiée
   } catch (e) {
@@ -762,17 +759,16 @@ exports.updateUser = async (newUser) => {
 };
 
 exports.deleteUser = async (id) => {
-
   try {
     const query = `DELETE FROM users WHERE id = ${id} `; // une requête SQL classique
     const sqlResult = await new Promise((resolve, reject) => {
-
       con.query(query, (error, result) => {
         if (error) return reject(error);
         return resolve(result);
       });
+    });
 
-      return true;
+    return sqlResult;
   } catch (e) {
     throw Error(`[DELETE User] ${e}`);
   }
@@ -785,7 +781,7 @@ Nos fonctions de traitement sont prêtes on va pouvoir maintenant réaliser notr
 Le contrôleur va bien sur se trouver dans le dossier `controllers`. On va y créer un fichier `users.controller.js`:
 
 ```js
-const UserService = require('../services/user.service.ts'); // on va utiliser le service défini précédemment
+const UserService = require('../services/users.service.js'); // on va utiliser le service défini précédemment
 
 
 exports.getUsers = async (req, res) => {
@@ -808,7 +804,6 @@ exports.getUsers = async (req, res) => {
 };
 
 exports.getUserByLastname = async (req, res) => {
-  
   if (!req.params.lastname) {
     return res.status(400).json({
       status: 400,
@@ -837,7 +832,6 @@ exports.getUserByLastname = async (req, res) => {
 };
 
 exports.createUser = async (req, res) => {
-  
   // on vérifie la présence du firstname et du lastname qui sont les infos minimums
   // pour faire un enregistrement. On cherche dans le `body` car on sera dans le
   // cadre d'un POST
@@ -848,28 +842,33 @@ exports.createUser = async (req, res) => {
     });
   }
 
-  const { firstname, lastname, mail, phonenumber } = req.body;
+  const {
+    firstname,
+    lastname,
+    mail,
+    phonenumber,
+  } = req.body;
 
   const user = {
-    firstname : firstname,
-    lastname: lastname,
-  }
+    firstname,
+    lastname,
+  };
 
-  // si il y a un mail et/ou un phonenumber on les inclut
-  if(mail){
+    // si il y a un mail et/ou un phonenumber on les inclut
+  if (mail) {
     user.mail = mail;
   }
-  if(phonenumber){
+  if (phonenumber) {
     user.phonenumber = phonenumber;
   }
 
   try {
     // on utilise la fonction dédiée du service
-    const user = await UserService.createUser(user);
+    const newUser = await UserService.createUser(user);
     // on renvoie une réponse avec un statut 200, pour prévenir que tout est ok
     return res.status(200).json({
       status: 200,
-      result: user,
+      result: newUser,
     });
   } catch (e) {
     // on renvoie une réponse avec un statut 500, pour prévenir que l'erreur est interne au serveur
@@ -882,7 +881,6 @@ exports.createUser = async (req, res) => {
 };
 
 exports.updateUser = async (req, res) => {
-  
   // on vérifie la présence d'un id
   if (!req.body.id) {
     return res.status(400).json({
@@ -899,30 +897,36 @@ exports.updateUser = async (req, res) => {
     });
   }
 
-  const { id, firstname, lastname, mail, phonenumber } = req.body;
+  const {
+    id,
+    firstname,
+    lastname,
+    mail,
+    phonenumber,
+  } = req.body;
 
-  const user = {};
+  const user = { id };
 
-  if(firstname){
+  if (firstname) {
     user.firstname = firstname;
   }
-  if(lastname){
+  if (lastname) {
     user.lastname = lastname;
   }
-  if(mail){
+  if (mail) {
     user.mail = mail;
   }
-  if(phonenumber){
+  if (phonenumber) {
     user.phonenumber = phonenumber;
   }
 
   try {
     // on utilise la fonction dédiée du service
-    const user = await UserService.updateUser(user);
+    const updatedUser = await UserService.updateUser(user);
     // on renvoie une réponse avec un statut 200, pour prévenir que tout est ok
     return res.status(200).json({
       status: 200,
-      result: user,
+      result: updatedUser,
     });
   } catch (e) {
     // on renvoie une réponse avec un statut 500, pour prévenir que l'erreur est interne au serveur
@@ -935,7 +939,6 @@ exports.updateUser = async (req, res) => {
 };
 
 exports.deleteUser = async (req, res) => {
-  
   if (!req.params.id) {
     return res.status(400).json({
       status: 400,
@@ -947,8 +950,9 @@ exports.deleteUser = async (req, res) => {
 
   try {
     await UserService.deleteUser(id);
-    // comme le statut 204 ('No content') ne retourne pas de contenu, ça ne sert à rien de remplir un json pour prévenir que la suppression a bien eu lieu
-    return res.status(204);
+    // comme le statut 204 ('No content') ne retourne pas de contenu,
+    // ça ne sert à rien de remplir un json pour prévenir que la suppression a bien eu lieu
+    return res.status(204).json();
   } catch (e) {
     return res.status(500).json({
       status: 500,
@@ -976,7 +980,7 @@ const router = express.Router();
 
 router.get('/', UserController.getUsers); // l'url complète sera du type '<adresse>/api/users'
 
-router.get('/:lastname', UserController.getUsersByLastname);
+router.get('/:lastname', UserController.getUserByLastname);
 
 router.post('/', UserController.createUser);
 
