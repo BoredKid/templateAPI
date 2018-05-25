@@ -1448,7 +1448,7 @@ exports.deleteTask = async (req, res) => {
     await TaskService.deleteTask(id);
     // comme le statut 204 ('No content') ne retourne pas de contenu
     // ça ne sert à rien de remplir un json pour prévenir que la suppression a bien eu lieu
-    return res.status(204);
+    return res.status(204).json();
   } catch (e) {
     return res.status(500).json({
       status: 500,
