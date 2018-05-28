@@ -1389,7 +1389,7 @@ exports.createTask = async (req, res) => {
 
     return res.status(201).json({
       status: 201,
-      // on renvoie un 201, qui signifie 'Created
+      // on renvoie un 201, qui signifie 'Created'
       // il vaut mieux utiliser les status précis comme celui-ci lorsqu'il est possible
       // pour faciliter la compréhension de l'API
       result: true,
