@@ -30,3 +30,8 @@ const server = app.listen(process.env.PORT || port, () => {
 });
 
 console.log('It\'s all good (y)');
+
+/**
+ * Export the Express app so that it can be used by Chai
+ */
+module.exports = app;

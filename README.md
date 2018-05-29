@@ -103,6 +103,7 @@ si il y a besoin d'intéragir avec une base de donnée MongoDB. Pour plus d'info
 - `dotenv`  
 pour la gestion des variables d'environnements
 
+
 ### DevDependencies
 Certains packages ne sont plus requis à partir du moment où l'application est mise en production. Comme par exemple un package permettant de corriger le formattage du code, etc.
 
@@ -125,6 +126,10 @@ Les package utiles pour développer ton api :
   surveille les fichiers présents dans le répertoire à partir duquel le _node_ est démarré et, si les fichiers changent, `nodemon` redémarrera automatiquement l'application. _Moins on en fait, mieux on se porte !_
 - `apidoc`  
 génère de la doc Web à partir des commentaires. [Par ici](#apidoc) pour voir comment ça marche.
+- `mocha`  
+test runner, utile pour mettre en place des tests comme par exemple en [TDD](#tdd)
+- `chai`  
+assertion library à coupler avec mocha ci-dessus pour écrire et lancer ses [tests](#tdd)
 
 ## <a id="eslint"></a> V - EsLint 
 ### Pourquoi l'EsLint ?
@@ -136,6 +141,9 @@ En tout cas, pas de panique. La plupart des éditeurs de textes populaires intè
 
 ### La mise en place
 - Installe le package `eslint`
+```sh
+$ npm install --save-dev eslint
+```
 - Rends toi dans le dossier `./nodes_modules/.bin`
 - Lance la commande `eslint --init` et suis les indications :
   > How would you like to configure ESLint ?  
@@ -317,12 +325,12 @@ Chaque fonction de se controller va être exporter. Par exemple, la fonction qui
 exports.helloName = (req, res) => {
   const name = req.params.name || req.body.name;
   if (!name) {
-    res.status(400).json({
+    return res.status(400).json({
       message: 'Name missing',
     });
   }
 
-  res.status(200).json({
+  return res.status(200).json({
     message: `Hello ${name}!`,
   });
 };
@@ -1519,3 +1527,436 @@ Pour résumer le tout, on va rappeler le parcours d'une requête et la réponse 
 - Qui, lui-même, va faire l'action demandée (GET, UPDATE, etc.) sur le modèle puis renvoyer l'information au contrôleur
 - Qui va gérer la donnée reçue du service, la formater (eg. cacher les données sensibles) et renvoyer cette donnée, ou une erreur selon le résultat du service
 - L'utilisateur de l'API recevra donc une réponse avec les informations dont il a besoin, ou une erreur claire s'il y a
+
+## <a id="tdd"></a> III - Test Driven Development : TDD
+Dans cette partie nous allons voir, comment mettre en place des tests dans une optique d'adopter la philosophie **TDD**, **T**est **D**riven **D**evelopment.
+
+### 1 - C'est quoi ce truc encore ?
+Le TDD ou le *développement piloté par les tests* en français est une philosophie et une méthode de développement qui s'appuie sur des *tests unitaires* (un autre gros mot !) spécifiant le comportement du code afin d'encadré le développement de notre software.
+
+#### Test unitaire
+Un test unitaire est un test **très très très** précis sur notre code.  
+Exemple :
+
+```js
+// ma fonction a tester
+function sum (a,b) {
+  return a + b;
+}
+```
+
+Notre test unitaire pourrait tester tout simplement que `sum(1,3)` va renvoyer `4`.
+
+Néanmoins, on se rend compte que la fonction suivante réussit aussi le test unitaire :
+```js
+function sum(a,b){
+  return 4;
+}
+```
+
+C'est pourquoi il est de bon ton de mettre en place plusieurs tests unitaires pour tester une fonction ou une méthode (cf illustration plus bas).
+
+#### Le cycle TDD
+En TDD, il est généralement admis de suivre ces trois règles écrites par Robert Martin (un mec chaud dans le milieu du TDD):
+
+- Vous devez écrire un test qui échoue avant d'écrire votre code lui-même.
+
+- Vous ne devez pas écrire un test plus compliqué que nécessaire.
+
+- Vous ne devez pas écrire plus de code que nécessaire, juste assez pour faire passer le test qui échoue.
+
+On va donc suivre les différentes étapes du Red-Green-Refactor:
+- J'écris mon test
+- Je vérifie qu'il échoue (il est donc **RED**)
+- J'écris le code suffisant pour que le test soit passé (pas plus, pas moins)
+- Je vérifie que le test est passé (il est **GREEN**)
+- Je vais factoriser mon code (je **REFACTOR**)
+
+_Explication dernière étape :_
+
+_Pour l'exemple de la fonction `sum` cité plus haut, j'ai pu mettre juste un `return 4` pour le test "`sum(1,3)` doit renvoyer `4`" et ensuite après avoir ajouté le test "`sum(1,8)` doit renvoyer `9`", je peux ajouter un simple `if(a===1 && b===8) return 9` avant le `return 4`. A ce moment là, les deux tests sont validés et je vais pouvoir refactor ma fonction en remplaçant son contenu par `return a+b` pour avoir un code plus logique et plus optimisé._
+
+#### Illustration
+Nous allons illustrer la méthode avec l'exemple du célèbre `FizzBuzz`. Le but est de compter en remplaçant les multiples de 3 par `fizz`, les multiples de 5 par `buzz` et, du coup, les nombres divisibles par 3 et par 5 par `fizzbuzz`.
+
+On veut donc avoir deux fonctions : 
+- une fonction qui prend un nombre en entrée et renvoie le nombre ou fizz ou buzz
+- une fonction qui prend un nombre en entier et compte jusqu'à ce nombre en fizzbuzz (cette fonction exploite la fonction précédente)
+
+Cette exemple sera visible sur [ce repo github](https://github.com/BoredKid/fizzbuzztdd).
+
+_Pour cette illustration, j'utilise `mocha` comme test runner et `chai` comme assertion library sur `node`_
+
+On a avoir deux fichier `index.js` et `test.js`.
+
+La première étape est de créée la première fonction qu'on va appeler `numberToFizzBuzz`.
+Selon le cycle cité plus haut on doit d'abord aller écrire le test d'existence de la fonction sur le fichier `test.js`.
+
+```js
+// permet de décrire un bout de code
+describe('A FizzBuzz counter', () => { 
+// je vais faire un describe pour chacune des fonctions. Cela permet de découper le code.
+  describe('NumberToFizzBuzz', () => {
+  // mon premier test : "la fonction devrait exister"
+    it('should exist', () => {
+      // je m'attends à ce que la fonction existe
+      expect(fizzbuzz.NumberToFizzBuzz).to.exist;
+    });
+  });
+});
+```
+
+Je lance le test et j'obtiens :
+```sh
+A FizzBuzz counter
+    NumberToFizzBuzz
+      1) should exist
+
+
+  0 passing (10ms)
+  1 failing
+
+  1) A FizzBuzz counter
+       NumberToFizzBuzz
+         should exist:
+     AssertionError: expected undefined to exist
+      at Context.it (test\test.js:7:43)
+```
+Mon test est **RED** (sur certain Terminal comme celui de Visual Studio Code, il l'est vraiment), je vais pouvoir créer la fonction pour avoir du **GREEN**. Dans le fichier `index.js`:
+
+```js
+// je définis la fonction
+exports.NumberToFizzBuzz = () => {}
+;
+```
+
+Je relance le test :
+
+```sh
+ A FizzBuzz counter
+    NumberToFizzBuzz
+      √ should exist
+
+
+  1 passing (8ms)
+```
+
+Le test est **GREEN** (vraiment vert sur certain terminal). Normalement à ce stade on passe en **REFACTOR** mais en général pour le premier passage de test il n'y en a pas. _En même temps, ca va être dur de faire plus factorisé là._
+
+Bon on enchaine. On va pouvoir passer aux choses sérieuses. On veut que lorsque on passe `1` en argument la fonction nous renvoie `1`.
+
+```js
+it('should return 1 when arg is 1', () => {
+  expect(fizzbuzz.NumberToFizzBuzz(1)).to.equal(1);
+});
+```
+Si on lance le test on va avoir du **RED** : 
+```sh
+ A FizzBuzz counter
+    NumberToFizzBuzz
+      √ should exist
+      1) should return 1 when arg is 1
+
+
+  2 passing (16ms)
+  1 failing
+
+  1) A FizzBuzz counter
+       NumberToFizzBuzz
+         should return 1 when arg is 1:
+
+      AssertionError: expected -1 to equal 1
+      + expected - actual
+
+      --1
+      +1
+
+      at Context.it (test\test.js:19:53)
+```
+
+On va remédier à cela:
+
+```js
+exports.NumberToFizzBuzz = (num) => {
+  if (num === 1) {
+    return 1;
+  }
+  return -1;
+};
+```
+Le test est vert ! On va pouvoir faire la même chose avec 2.
+
+```js
+it('should return 2 when arg is 2', () => {
+  expect(fizzbuzz.NumberToFizzBuzz(2)).to.equal(2);
+});
+```
+On transforme le **RED** en **GREEN** de manière *Dummy* (sans chercher à optimiser notre code) :
+```js
+exports.NumberToFizzBuzz = (num) => {
+  if (num === 1) {
+    return 1;
+  }
+  // j'ajoute le bloc suivant
+  if (num === 2) {
+    return 2;
+  }
+  return -1;
+};
+```
+Le test passe au **GREEN**. On va entrer en mode **REFACTOR**.
+
+Au lieu de faire un test pour chaque nombre je peux juste tester si on a reçu un nombre en paramètre et le renvoyer directement.
+
+```js
+exports.NumberToFizzBuzz = (num) => {
+  if (num) {
+    return num;
+  }
+  return -1;
+};
+```
+On relance les tests pour vérifier qu'on reste en full **GREEN** et normalement c'est le cas *clap clap clap*.
+
+_On aurait pu tester le type de l'argument dans une démarche encore plus rigoureuse mais bon ce tuto est déjà assez long (sur la version finale le test et le code associé à ce test est ajouté)_
+
+Bon là ca va devenir intéressant, on doit gérer le cas où le nombre est `3` et donc la fonction renvoie `fizz` :
+
+
+```js
+it('should return fizz when arg is 3', () => {
+  expect(fizzbuzz.NumberToFizzBuzz(3)).to.equal('fizz');
+});
+```
+
+Encore une fois on reste simple :
+
+```js
+exports.NumberToFizzBuzz = (num) => {
+  if (num) {
+    if (num === 3) return 'fizz';
+    return num;
+  }
+  return -1;
+};
+```
+On va passer le 4 car le nombre ne présente pas de particularité particulière par rapport aux tests déjà mené. En effet, les tests unitaires c'est bien mais on peut pas tester tous les cas, sinon autant tout faire à la main. Le but est d'en faire un maximum en fonction du comportement de l'application selon les entrées.
+
+Le prochain cas intéressant est le 5: 
+
+```js
+it('should return buzz when arg is 5', () => {
+  expect(fizzbuzz.NumberToFizzBuzz(5)).to.equal('buzz');
+});
+```
+
+Qu'on peut faire passer du **RED** au **GREEN* ainsi :
+```js
+exports.NumberToFizzBuzz = (num) => {
+  if (num) {
+    if (num === 3) return 'fizz';
+    if (num === 5) return 'buzz';
+    return num;
+  }
+  return -1;
+};
+```
+
+Ensuite on avance au 6 :
+```js
+it('should return fizz when arg is 6', () => {
+  expect(fizzbuzz.NumberToFizzBuzz(6)).to.equal('fizz');
+});
+```
+Validé par :
+```js
+exports.NumberToFizzBuzz = (num) => {
+  if (num && Number.isInteger(num)) {
+    if (num === 3) return 'fizz';
+    if (num === 6) return 'fizz';
+    if (num === 5) return 'buzz';
+    return num;
+  }
+  return -1;
+};
+```
+Bon là on peut **REFACTOR** un peu :
+```js
+exports.NumberToFizzBuzz = (num) => {
+  if (num) {
+    if (num === 3 || num === 6) return 'fizz';
+    if (num === 5) return 'buzz';
+    return num;
+  }
+  return -1;
+};
+```
+_J'ai intentionnellement choisi un **REFACTOR** non optimal pour illustrer la suite_
+
+On enchaine avec le 9 :
+
+```js
+it('should return fizz when arg is 9', () => {
+  expect(fizzbuzz.NumberToFizzBuzz(9)).to.equal('fizz');
+});
+```
+
+Une solution: 
+
+```js
+exports.NumberToFizzBuzz = (num) => {
+  if (num) {
+    if (num === 3 || num === 6 || num === 9) return 'fizz';
+    if (num === 5) return 'buzz';
+    return num;
+  }
+  return -1;
+};
+```
+
+Bon obviously le **REFACTOR** précédent est pas optimal (3,6,9 on commence à comprendre le pattern) : 
+
+```js
+exports.NumberToFizzBuzz = (num) => {
+  if (num) {
+    if (num % 3 === 0) return 'fizz';
+    if (num === 5) return 'buzz';
+    return num;
+  }
+  return -1;
+};
+```
+
+Ensuite le 10 doit renvoyer buzz :
+```js
+it('should return buzz when arg is 10', () => {
+  expect(fizzbuzz.NumberToFizzBuzz(10)).to.equal('buzz');
+});
+```
+
+On continue de faire les idiots pour le passage **GREEN**:
+```js
+exports.NumberToFizzBuzz = (num) => {
+  if (num) {
+    if (num % 3 === 0) return 'fizz';
+    if (num === 5) return 'buzz';
+    if (num === 10) return 'buzz';
+    return num;
+  }
+  return -1;
+};
+```
+
+Et on va **REFACTOR** et comme on a de l'expérience maintenant on directement utiliser le `%` :
+```js
+exports.NumberToFizzBuzz = (num) => {
+  if (num) {
+    if (num % 3 === 0) return 'fizz';
+    if (num % 5 === 0) return 'buzz';
+    return num;
+  }
+  return -1;
+};
+```
+
+Bon c'est pas mal tout ça.
+
+On directement aller au 15 ensuite qui est le premier FizzBuzz si vous avez bien compris :
+
+```js
+it('should return fizzbuzz when arg is 15', () => {
+  expect(fizzbuzz.NumberToFizzBuzz(15)).to.equal('fizzbuzz');
+});
+```
+
+Et on aime pas le **RED** donc on passe **GREEN** (protéger la nature !) :
+
+```js
+exports.NumberToFizzBuzz = (num) => {
+  if (num) {
+    if (num === 15) return 'fizzbuzz';
+    if (num % 3 === 0) return 'fizz';
+    if (num % 5 === 0) return 'buzz';
+    return num;
+  }
+  return -1;
+};
+```
+
+On fait pareil pour 30 et on **REFACTOR** :
+
+```js
+exports.NumberToFizzBuzz = (num) => {
+  if (num && Number.isInteger(num)) {
+    let result = '';
+    if (num % 3 === 0) result += 'fizz';
+    if (num % 5 === 0) result += 'buzz';
+    return result.length > 0 ? result : num;
+  }
+  return -1;
+};
+```
+Et voilà ! Maintenant on peut, si on le souhaite ajouter des tests unitaires sur des arguments aux hasard (`true`,"salut", 82, 135, ...) pour vérifier la robustesse de notre application. En cas de remontée de bug: créer un test unitaire correspondant à ce qui aurait du arriver et après corriger le bug. Grâce à cela on assure la robustesse de notre application.
+
+Pour finir: je te propose de faire toi même la fonction `CountWithFizzBuzz` qui renvoie un tableau avec les nombres ou des chaînes de caractères selon la règles du fizzbuzz. Elle prend en argument un nombre supérieur à 0 qui est le nombre jusqu'au qu'elle on doit compter. Le cas échéant le tableau est vide.
+
+Voici des pistes pour les tests:
+- la fonction existe
+- la fonction renvoit un tableau
+- la fonction renvoit un tableau vide si on n'a pas un entier supérieur à 0
+- la fonction renvoit le décompte fizzbuzz si le nombre est un entier (à tester avec des exemples de valeurs)
+
+À toi de jouer ! GLHF !
+
+### 2 - Comment je peux mettre en place cette approche sur mon projet ?
+
+#### Les packages
+On va installer `mocha` et `chai` qui sont respectivement un test runner et une assertion library.
+
+_Il existe plusieurs alternatives aussi populaires libres à vous de les utiliser :) (du moment qu'il y a des tests utiles et fonctionnelles)._
+
+```sh
+$ npm install --save-dev mocha chai
+```
+
+#### Comment faire organiser nos tests ?
+
+On va créer un dossier `test`. C'est dans ce dossier que `mocha` va chercher des tests. On peut dans ce dossier créer autant de dossier et de fichier que l'on veut.
+
+Une bonne méthode pourrait, par exemple, de faire correspondre les dossiers et les fichiers de tests à la structure de notre application en ajoutant juste `test` à la fin du fichier ou `spec`.
+
+Ex: `hello.controller.js` est testé par `hello.controller.test.js`.
+
+On peut aussi créer un dossier dédié à un ensemble de route. Par exemple, faire un dossier `hello` et avoir un fichier `controller.test.js`, `route.test.js`, ...
+
+#### Ecritures de tests ...
+
+On va écrire deux tests pour l'exemple et je vous laisse écrire d'autres tests (ici si vous suivez le Readme dans l'ordre des tutos les tests sont écrits après développement des différentes routes donc on est pas dans la démarche TTD mais je t'encourage à la suivre !). 
+
+Pour la route `GET /hello`, voici ma proposition pour vérifier le bon fonctionnement :
+
+```js
+  // GET - hello
+  it('should return hello', () => chai.request(app)
+    .get('/api/hello')
+    .then((res) => {
+      expect(res).to.have.status(200); // on vérifie le status 200
+      expect(res).to.be.json; // on vérifie qu'on a bien un JSON
+      expect(res.body.result).to.equal('Hello World!'); // on vérifie que le message est bien 'Hello World!'
+    }));
+```
+
+Pour la route `POST /hello`, je vais tester le résulat si j'oublie de fournir un name :
+```js
+  // POST - hello
+  it('should return 400:"Name missing" if no name', () => chai.request(app)
+    .post('/api/hello')
+    .then((res) => {
+      expect(res).to.have.status(400); // on vérifie le status 200
+      expect(res).to.be.json; // on vérifie qu'on a bien un JSON
+      expect(res.body.message).to.equal('Name missing'); // on vérifie que le message est bien 'Name missing'
+    }));
+```
+
+#### Que tester ?
+Un maximum de choses. L'application comme ci-dessus. Les controllers, les services (si il y en a ...), etc...
