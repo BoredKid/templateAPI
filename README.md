@@ -1951,7 +1951,7 @@ Pour la route `POST /hello`, je vais tester le résulat si j'oublie de fournir u
   it('should return 400:"Name missing" if no name', () => chai.request(app)
     .post('/api/hello')
     .then((res) => {
-      expect(res).to.have.status(400); // on vérifie le status 200
+      expect(res).to.have.status(400); // on vérifie le status 400
       expect(res).to.be.json; // on vérifie qu'on a bien un JSON
       expect(res.body.message).to.equal('Name missing'); // on vérifie que le message est bien 'Name missing'
     }));
