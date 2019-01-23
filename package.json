@@ -1,7 +1,7 @@
 {
     "name": "templateapi",
     "version": "1.0.0",
-    "description": "Un template d'API pour la CoZone à Capgemini Lille",
+    "description": "Un template d'API",
     "main": "app.js",
     "scripts": {
         "start": "node index.js",
@@ -12,8 +12,8 @@
     "author": "",
     "license": "ISC",
     "apidoc": {
-        "title": "ApiDoc pour le template API de la CoZone",
-        "description": "Cette API est un template pour les CoZonards qui sont amenés à développer le propre API. \nCette documentation a été générée avec Apidoc. \nPour toute information ou réclamation, vous pouvez vous addresser à Clary MASSON ou Cissé KANE",
+        "title": "ApiDoc pour le template API",
+        "description": "Cette API est un template pour apprendre à développer sa propre API. \nCette documentation a été générée avec Apidoc. \nPour toute information ou réclamation, vous pouvez vous addresser à Clary (Tektiv) ou Cissé (BoredKid)",
         "url": "/api",
         "sampleUrl": "localhost:8080"
     },

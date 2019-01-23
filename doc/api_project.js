@@ -1,6 +1,6 @@
 define({
-  "title": "ApiDoc pour le template API de la CoZone",
-  "description": "Cette API est un template pour les CoZonards qui sont amenés à développer le propre API. \nCette documentation a été générée avec Apidoc. \nPour toute information ou réclamation, vous pouvez vous addresser à Clary MASSON ou Cissé KANE",
+  "title": "ApiDoc pour le template API",
+  "description": "Cette API est un template pour apprendre à développer sa propre API. \nCette documentation a été générée avec Apidoc. \nPour toute information ou réclamation, vous pouvez vous addresser à Clary (Tektiv) ou Cissé (BoredKid)",
   "url": "/api",
   "sampleUrl": "localhost:8080",
   "name": "templateapi",

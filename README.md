@@ -1,7 +1,6 @@
-# Cozone - Tutoriel API NodeJS/Express
+# Tutoriel API NodeJS/Express
 
-Qui dit CoZone dit Collaboration.  
-Et pour pouvoir travailler efficacement en collaboration, avec les différentes membres de la CoZone, rien ne vaut les bonnes pratiques.
+Proposition de tutoriel et template pour application Back-End NodeJS
 
 Dans ce tutoriel, tu vas pouvoir suivre la création d'une API, en passant par la mise en place de celle-ci mais aussi les bonnes pratiques du code ou de l'architecture.
 
@@ -135,7 +134,7 @@ assertion library à coupler avec mocha ci-dessus pour écrire et lancer ses [te
 ### Pourquoi l'EsLint ?
 Nous allons configurer EsLint qui est un linter. Un linter est un outil d'aide à la mise en forme du code et à la détection d'erreur. Le but est d'établir un ensemble de règles sur la structure, la mise en forme et la syntaxe du code. Le respect de ses règles au sein d'un projet permet une meilleure compréhension du code entre les membres de manière durable.
 
-A la CoZone, nous avons décider d'utiliser le guide EsLint de Airbnb qui est l'un des modèles les plus stricts. Cela peut sembler dure à utiliser au début mais la propreté (pour ne pas dire la beauté) du code s'en ressentira fortement. De plus, cela permet d'apprendre beaucoup de chose sur le JavaScript.
+Nous avons décider d'utiliser le guide EsLint de Airbnb qui est l'un des modèles les plus stricts. Cela peut sembler dure à utiliser au début mais la propreté (pour ne pas dire la beauté) du code s'en ressentira fortement. De plus, cela permet d'apprendre beaucoup de chose sur le JavaScript.
 
 En tout cas, pas de panique. La plupart des éditeurs de textes populaires intègrent des outils d'auto-correction qu'on peut reliés à son set de règles EsLint. Par exemple, sur Visual Studio Code, on a une extension dédiée. Une fois paramétrée, la plupart des erreurs pourront être corrigé grâce à des raccourcis ou même juste à la sauvegarde du fichier. Et puis pour les erreurs les plus tenaces, on peut aller chercher des explications directement sur [le site d'EsLint](https://eslint.org/) où on trouvera en général des éléménts de corrections pour l'erreur donnée.
 
@@ -212,7 +211,7 @@ _\- Clary, 22 Mai 2018_
 (En Construction)
 
 ## <a id="organisation"></a> VI - Organisation: Comment structurer mon projet ?
-Le contenu de ce paragraphe est une proposition d'organisation et de bonnes pratiques que nous avons décider d'adopter à la CoZone pour les APIs. Il en existe pleins d'autres valables mais on a choisi celle-ci encore une fois sans aucune raison valable en dehors du fait qu'elle permet d'avoir un projet propre et compréhensible. Du coup, nous te conseillons fortement (sans vouloir te commander) d'utiliser les mêmes conventions. Comme ca, il sera plus facile d'analyser le code pour un autre Cozonnard. Après si veux semer la Discord(!unjoke), personne ne peut t'en empêcher :/.
+Le contenu de ce paragraphe est une proposition d'organisation et de bonnes pratiques que nous avons décider d'adopter. Il en existe pleins d'autres valables mais on a choisi celle-ci encore une fois sans aucune raison valable en dehors du fait qu'elle permet d'avoir un projet propre et compréhensible. Du coup, nous te conseillons fortement (sans vouloir te commander) d'utiliser les mêmes conventions. Comme ca, il sera plus facile d'analyser le code pour un autre développeur. Après si veux semer la Discord(!unjoke), personne ne peut t'en empêcher :/.
 
 ### Le fichier principal : `app.js`
 Ce fichier est la base de l'application, le fichier principal qui contient le paramétrage du serveur et son lancement. 
@@ -368,8 +367,8 @@ $ npm install --save-dev apidoc
 - Renseigner les informations apidoc dans le `package.json` en tant que champ au même titre que `"scripts"` ou `"name"`
 ```js
     "apidoc": {
-        "title": "ApiDoc pour le template API de la CoZone", //Titre de la doc
-        "description": "Cette API est un template pour les CoZonards qui sont amenés à développer le propre API. \nCette documentation a été générée avec Apidoc. \nPour toute information ou réclamation, vous pouvez vous addresser à Clary MASSON ou Cissé KANE", // Description de l'API qui apparaît en début de documentation
+        "title": "ApiDoc pour le template API", //Titre de la doc
+        "description": "Cette API est un template pour apprendre à développer sa propre API. \nCette documentation a été générée avec Apidoc. \nPour toute information ou réclamation, vous pouvez vous addresser à Clary (Tektiv) ou Cissé (BoredKid)", // Description de l'API qui apparaît en début de documentation
         "url": "/api", // le préfix à mettre devant toute les routes
         "sampleUrl": "localhost:8080/api" // une URL permettant de tester directement l'API (le mieux c'est d'avoir l'adresse qu'à l'API en ligne mais bon pour ce test on vous laisse lancer l'application en local pour tester)
     },
@@ -1960,3 +1959,8 @@ Pour la route `POST /hello`, je vais tester le résulat si j'oublie de fournir u
 
 #### Que tester ?
 Un maximum de choses. L'application comme ci-dessus. Les controllers, les services (si il y en a ...), etc...
+
+# Next Step
+
+- Socket
+- Upload de fichier
